@@ -1,5 +1,5 @@
 """
-Libreria de control de motores para el robot IRB.
+Libreria para el control de actuadores del robot IRB.
 
 """
 from machine import Pin , PWM
@@ -56,14 +56,19 @@ def stop():
     StopMotor(d2_ina1, d2_ina2, d2_pwma)
 
 while True:
-    duty_cycle=float(input("Enter pwm duty cycle"))
-    print (duty_cycle)
-    sleep(1)
+    txt = input()
+    if txt == "s":
+        stop()
+        break
     
-    forward(duty_cycle)
-    sleep(3)
+    elif txt == "f":
+        duty_cycle = int(input("Ingrese el ciclo de trabajo (0-100): "))
+        forward(duty_cycle)
+        
+    elif txt == "b":
+        duty_cycle = int(input("Ingrese el ciclo de trabajo (0-100): "))
+        backward(duty_cycle)
 
-    backward(duty_cycle)
-    sleep(3)
 
-    stop()
+stop()
+led.toggle()
