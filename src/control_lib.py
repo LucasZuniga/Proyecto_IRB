@@ -20,8 +20,8 @@ d1_ina1 = Pin(2,Pin.OUT)
 d1_ina2 = Pin(1, Pin.OUT)
 d1_pwma = PWM(Pin(0))
 ## Encoder 1
-m1_enc1 = Pin(7, Pin.IN)
-m1_enc2 = Pin(8, Pin.IN)
+m1_enc1 = Pin(7, Pin.IN, Pin.PULL_UP)
+m1_enc2 = Pin(8, Pin.IN, Pin.PULL_UP)
 
 # Driver 2
 d2_stby = Pin(11, Pin.OUT)
@@ -30,8 +30,8 @@ d2_ina1 = Pin(6,Pin.OUT)
 d2_ina2 = Pin(5, Pin.OUT)
 d2_pwma = PWM(Pin(4))
 ## Encoder 2
-m2_enc1 = Pin(9, Pin.IN)
-m2_enc2 = Pin(10, Pin.IN)
+m2_enc1 = Pin(9, Pin.IN, Pin.PULL_UP)
+m2_enc2 = Pin(10, Pin.IN, Pin.PULL_UP)
 ##   Rodillo
 d2_inb1 = Pin(12,Pin.OUT)
 d2_inb2 = Pin(13, Pin.OUT)
@@ -119,7 +119,7 @@ led.toggle()            # Encender el LED para indicar que el programa ha inicia
 #         backward(duty_cycle)
 
 # Close Loop Motor 1
-vel_ref = 10 # Velocidad de referencia [RPM]
+vel_ref = 1 # Velocidad de referencia [RPM]
 vel_lectura = 0
 
 ## Parametros Controlador
@@ -130,21 +130,22 @@ Kd = 0 # Ganancia derivativa
 error = 0
 error_prev = 0
 integral = 0
-duty = 30
+duty = 10
 
-delay = 1
+delay = 0.05
 
 prev_enc_value = 1
 tiempo_entre_enc = 0
 
 while True:
     print(m2_enc1.value())
-    if m2_enc1.value():
+    if m2_enc1.value() == 1:
         led.toggle()
     # Calculo vel actual
-    if not prev_enc_value and m2_enc1.value():
+    if prev_enc_value == 0 and m2_enc1.value() == 1:          # Rotacion = Flancos de subida
         vel_lectura = 60/tiempo_entre_enc               # [RPM]
         tiempo_entre_enc = 0
+    
         
     else:
         tiempo_entre_enc += delay
@@ -159,12 +160,9 @@ while True:
     
     # print(duty)
     if duty >= 0:
-        # RotateCW(duty, d1_ina1, d1_ina2, d1_pwma)
-        # print("rota")
-        pass
+        RotateCW(duty, d2_ina1, d2_ina2, d2_pwma)
     else:
-        pass
-        # RotateCCW(-duty, d1_ina1, d1_ina2, d1_pwma)
+        RotateCCW(-duty, d2_ina1, d2_ina2, d2_pwma)
         
     error_prev = error
     sleep(delay)
