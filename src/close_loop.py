@@ -52,6 +52,10 @@ def StopMotor(m1, m2, pwm):
     m2.value(0)
     pwm.duty_u16(0)
     
+def stop():
+    StopMotor(d1_ina1, d1_ina2, d1_pwma)
+    StopMotor(d2_ina1, d2_ina2, d2_pwma)
+    
 def flanco_subida(bit, bit_prev):
     if not bit_prev and bit:
         return True
@@ -106,49 +110,55 @@ time_prev_b2 = time_0
 
 vel_ref = 180
 
-Kp = 0.01
+Kp = 0.001
 Ki = 0
 Kd = 0
 
 
 while True:
-    error = vel_ref - vel_prev
-    duty += Kp*error
-    duty = max(15, (min(duty, 100)))
+    try:
+        error = vel_ref - vel_prev
+        duty += Kp*error
+        duty = max(15, (min(duty, 100)))
+        
+        RotateCCW(duty, d1_ina1, d1_ina2, d1_pwma)
+        
+        if flanco_subida(m1_enc1.value(), enc1_prev):
+            now = time_ns()
+            time_entre =  now - time_prev_s1
+            vel_s1b1s2b2[0] = 600000000/time_entre
+            time_prev_s1 = now
+            
+            
+        if flanco_bajada(m1_enc1.value(), enc1_prev):
+            now = time_ns()
+            time_entre =  now - time_prev_b1
+            vel_s1b1s2b2[1] = 600000000/time_entre
+            time_prev_b1 = now
+            
+        if flanco_subida(m1_enc2.value(), enc2_prev):
+            now = time_ns()
+            time_entre =  now - time_prev_s2
+            vel_s1b1s2b2[2] = 600000000/time_entre
+            time_prev_s2 = now
+            
+            
+        if flanco_bajada(m1_enc2.value(), enc2_prev):
+            now = time_ns()
+            time_entre =  now - time_prev_b2
+            vel_s1b1s2b2[3] = 600000000/time_entre
+            time_prev_b2 = now
+            
+        vel = (vel_s1b1s2b2[0] + vel_s1b1s2b2[1] + vel_s1b1s2b2[2] + vel_s1b1s2b2[3])/4
+        if vel != vel_prev:
+            print(f"vel ref: {vel_ref} RPM, vel actual: {int(vel)} RPM, duty: {int(duty)}%")
+        vel_prev = vel     
+        enc1_prev = m1_enc1.value()  
+        enc2_prev = m1_enc2.value()  
     
-    RotateCCW(duty, d1_ina1, d1_ina2, d1_pwma)
-    
-    if flanco_subida(m1_enc1.value(), enc1_prev):
-        now = time_ns()
-        time_entre =  now - time_prev_s1
-        vel_s1b1s2b2[0] = 600000000/time_entre
-        time_prev_s1 = now
-        
-        
-    if flanco_bajada(m1_enc1.value(), enc1_prev):
-        now = time_ns()
-        time_entre =  now - time_prev_b1
-        vel_s1b1s2b2[1] = 600000000/time_entre
-        time_prev_b1 = now
-        
-    if flanco_subida(m1_enc2.value(), enc2_prev):
-        now = time_ns()
-        time_entre =  now - time_prev_s2
-        vel_s1b1s2b2[2] = 600000000/time_entre
-        time_prev_s2 = now
-        
-        
-    if flanco_bajada(m1_enc2.value(), enc2_prev):
-        now = time_ns()
-        time_entre =  now - time_prev_b2
-        vel_s1b1s2b2[3] = 600000000/time_entre
-        time_prev_b2 = now
-        
-    vel = (vel_s1b1s2b2[0] + vel_s1b1s2b2[1] + vel_s1b1s2b2[2] + vel_s1b1s2b2[3])/4
-    if vel != vel_prev:
-        print(f"vel ref: {vel_ref} RPM, vel actual: {int(vel)} RPM, duty: {int(duty)}%")
-    vel_prev = vel     
-    enc1_prev = m1_enc1.value()  
-    enc2_prev = m1_enc2.value()  
-    
-    
+    except KeyboardInterrupt:
+        break
+
+stop()
+led.off()
+print("Finished.")
