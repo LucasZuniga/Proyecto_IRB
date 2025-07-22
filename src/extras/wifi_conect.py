@@ -2,8 +2,8 @@ import time
 import network
 import urequests as requests
 
-ssid = 'YOGA_7'
-password = '0987654321'
+ssid = 'Lucas'
+password = '1234567890'
 
 wlan = network.WLAN(network.STA_IF)
 
@@ -45,11 +45,15 @@ def getData():
 cnctWifi() 
    
 while True:
-    if wlan.isconnected():
-        print("sending get request...")
-        getData()
-    else:
-        print("attempting to reconnect...")
-        wlan.disconnect()
-        cnctWifi()
-    time.sleep(1)
+    try:
+        if wlan.isconnected():
+            print("sending get request...")
+            getData()
+        else:
+            print("attempting to reconnect...")
+            wlan.disconnect()
+            cnctWifi()
+        time.sleep(1)
+    except KeyboardInterrupt:
+        break
+    
