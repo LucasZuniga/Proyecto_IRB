@@ -50,11 +50,26 @@ d2_pwma.freq(1000)
 d2_stby.value(1)        # Enable the motor driver 2
 
 
-# Encoder read #
 
+# Set vel reference [thread 1] #
+
+vel_ref_1 = 60
+vel_ref_2 = 60
+
+def set_vel_ref():
+    global vel_ref_1
+    while True:
+        vel_ref = int(input("set the vel ref (30 - 100)[RPM]: "))
+        vel_ref_1 = vel_ref
+        sleep(0.5)
+
+        
+second_thread = _thread.start_new_thread(set_vel_ref, ())
+
+
+# Encoder read  [thread 0] #
 
 # Motor 1
-vel_ref_1 = 60
 vel_lectura_1 = 0
 duty_1 = 20
 m1_enc1_prev = 1
@@ -65,7 +80,6 @@ Ki_1 = 0
 Kd_1 = 0
 
 # Motor 2
-vel_ref_2 = 60
 vel_lectura_2 = 0
 duty_2 = 20
 m2_enc1_prev = 1
@@ -86,22 +100,21 @@ while True:
         m1_enc1_val = m1_enc1.value()
         m2_enc1_val = m2_enc1.value()
         
+        # Pulse Counter Motor 1
         if flanco_subida(m1_enc1_val, m1_enc1_prev):
             if m1_enc2.value():
                 count_pulses_1 += 1
             else:
                 count_pulses_1 -= 1
                 
-            # print(f"vueltas: {int(count_pulses/685)}, pulsos: {count_pulses}")  
-            
         if flanco_bajada(m1_enc1_val, m1_enc1_prev):
             if m1_enc2.value():
                 count_pulses_1 -= 1
             else:
                 count_pulses_1 += 1
-    
-            # print(f"vueltas: {int(count_pulses/685)}, pulsos: {count_pulses}")
-            
+         
+               
+        # Pulse Counter Motor 2
         if flanco_subida(m2_enc1_val, m2_enc1_prev):
             if m2_enc2.value():
                 count_pulses_2 -= 1
@@ -113,21 +126,21 @@ while True:
                 count_pulses_2 += 1
             else:
                 count_pulses_2 -= 1
-            
+        
+        
         if calc_vel >= 500:
             # Calcular velocidad
             now = time_ns()
             delta_time = now - time_prev
             # Motor 1
             delta_pulsos_1 = count_pulses_1 - count_pulses_1_prev
-            vel_lectura_1 = (87591240)*(delta_pulsos_1/delta_time)
+            vel_lectura_1 = (87591240)*(delta_pulsos_1/delta_time)         # 87591240 = (60sec = 1 min)*(10^9 nanosec = 1sec)/(685 pulsos = 1 Rev)
             
             # Motor 2
             delta_pulsos_2 = count_pulses_2 - count_pulses_2_prev
             vel_lectura_2 = (87591240)*(delta_pulsos_2/delta_time)
             
-            
-            print(f"vel ref: {vel_ref_1} RPM, vel lectura 1: {int(vel_lectura_1)} RPM, vel lectura 2: {int(vel_lectura_2)} RPM")
+            # print(f"vel ref: {vel_ref_1} RPM, vel lectura 1: {int(vel_lectura_1)} RPM, vel lectura 2: {int(vel_lectura_2)} RPM")
             
             time_prev = now
             count_pulses_1_prev = count_pulses_1
@@ -137,12 +150,13 @@ while True:
             # Controlador
             error_1 = vel_ref_1 - vel_lectura_1
             duty_1 += Kp_1*error_1
-            duty_1 = min(max(0, duty_1), 100)
+            duty_1 = min(max(0, duty_1), 70)
             
-            error_2 = vel_ref_2 - vel_lectura_2
+            error_2 = vel_ref_1 - vel_lectura_2
             duty_2 += Kp_1*error_2
-            duty_2 = min(max(0, duty_2), 100)
-            
+            duty_2 = min(max(0, duty_2), 70)
+
+
         m1_enc1_prev = m1_enc1_val
         m2_enc1_prev = m2_enc1_val
         calc_vel += 1
