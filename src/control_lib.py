@@ -24,13 +24,13 @@ def StopMotor(m1, m2, pwm):
     m2.value(0)
     pwm.duty_u16(0)
     
-def backward(duty, d1_ina1, d1_ina2, d1_pwma, d2_ina1, d2_ina2, d2_pwma):
-    RotateCW(duty, d1_ina1, d1_ina2, d1_pwma)
-    RotateCCW(duty, d2_ina1, d2_ina2, d2_pwma)
+def backward(duty_1, d1_ina1, d1_ina2, d1_pwma, duty_2, d2_ina1, d2_ina2, d2_pwma):
+    RotateCW(duty_1, d1_ina1, d1_ina2, d1_pwma)
+    RotateCCW(duty_2, d2_ina1, d2_ina2, d2_pwma)
 
-def forward(duty, d1_ina1, d1_ina2, d1_pwma, d2_ina1, d2_ina2, d2_pwma):
-    RotateCCW(duty, d1_ina1, d1_ina2, d1_pwma)
-    RotateCW(duty, d2_ina1, d2_ina2, d2_pwma)
+def forward(duty_1, d1_ina1, d1_ina2, d1_pwma, duty_2, d2_ina1, d2_ina2, d2_pwma):
+    RotateCCW(duty_1, d1_ina1, d1_ina2, d1_pwma)
+    RotateCW(duty_2, d2_ina1, d2_ina2, d2_pwma)
     
 def stop(d1_ina1, d1_ina2, d1_pwma, d2_ina1, d2_ina2, d2_pwma):
     StopMotor(d1_ina1, d1_ina2, d1_pwma)

@@ -1,11 +1,13 @@
-"""
-Libreria para el control de actuadores del robot IRB.
-
-"""
 ##### Librerias #####
 
+import sys
+from machine import Pin
+from utime import sleep
 from machine import Pin , PWM
-from time import sleep, sleep_ms, ticks_us, time_ns, time
+from time import sleep, sleep_ms, ticks_us, time_ns
+from control_lib import *
+import _thread
+
 
 ##### Definicion de pines #####
 
@@ -31,134 +33,126 @@ d2_pwma = PWM(Pin(4))
 ## Encoder 2
 m2_enc1 = Pin(9, Pin.IN, Pin.PULL_UP)
 m2_enc2 = Pin(10, Pin.IN, Pin.PULL_UP)
+##   Rodillo
+d2_inb1 = Pin(12,Pin.OUT)
+d2_inb2 = Pin(13, Pin.OUT)
+d2_pwmb = PWM(Pin(14))
 
-
-##### Definicion de funciones ####
-
-def RotateCW(duty, m1, m2, pwm):
-    m1.value(1)
-    m2.value(0)
-    duty_16 = int((duty*65536)/100)
-    pwm.duty_u16(duty_16)
-
-def RotateCCW(duty, m1, m2, pwm):
-    m1.value(0)
-    m2.value(1)
-    duty_16 = int((duty*65536)/100)
-    pwm.duty_u16(duty_16)
-    
-def StopMotor(m1, m2, pwm):
-    m1.value(0)
-    m2.value(0)
-    pwm.duty_u16(0)
-    
-def stop():
-    StopMotor(d1_ina1, d1_ina2, d1_pwma)
-    StopMotor(d2_ina1, d2_ina2, d2_pwma)
-    
-def flanco_subida(bit, bit_prev):
-    if not bit_prev and bit:
-        return True
-    return False
-
-def flanco_bajada(bit, bit_prev):
-    if bit_prev and not bit:
-        return True
-    return False
-
-def vel_encoders(enc1, enc1_prev, time_prev, time_entre_subida_1):
-    '''
-    Esta función calculará la velocidad del motor utilizando los flancos de subida y de bajada de los encoders, luego tomará un promedio de estas.
-    Para determinar la dirección de giro utilizará el desface de ambos encoders.
-    '''
-    time_now = time_ns()
-    dif_time = time_now - time_prev
-    
-    time_entre_subida_1 += dif_time
-
-    
-    if flanco_subida(enc1, enc1_prev):
-        vel_subida_1 = 1000000000/(max(time_entre_subida_1, 0.00001))
-        return [True, vel_subida_1]
-    
-    time_prev = time_now
-    return [False, time_prev, time_entre_subida_1]
+# Solenoide
+sol = Pin(15, Pin.OUT)
+ 
 
 ##### Main #####
 
-d1_pwma.freq(1000)
-d1_stby.value(1)
+d1_pwma.freq(1000)      ### Averiguar sobre esta linea ###
+d1_stby.value(1)        # Enable the motor driver 1
 d2_pwma.freq(1000)
-d2_stby.value(1)
+d2_stby.value(1)        # Enable the motor driver 2
 
-led.toggle()            # Encender el LED para indicar que el programa ha iniciado
 
-duty = 15
+# Encoder read #
 
-enc1_prev = 1
-enc2_prev = 1
 
-vel_s1b1s2b2 = [0,0,0,0]
-vel_prev = 0
-time_0 = time_ns()
-time_prev_s1 = time_0
-time_prev_b1 = time_0
-time_prev_s2 = time_0
-time_prev_b2 = time_0
+# Motor 1
+vel_ref_1 = 60
+vel_lectura_1 = 0
+duty_1 = 20
+m1_enc1_prev = 1
+count_pulses_1 = 0
+count_pulses_1_prev = 0
+Kp_1 = 0.1
+Ki_1 = 0
+Kd_1 = 0
 
-# Lazo cerrado
+# Motor 2
+vel_ref_2 = 60
+vel_lectura_2 = 0
+duty_2 = 20
+m2_enc1_prev = 1
+count_pulses_2 = 0
+count_pulses_2_prev = 0
+Kp_2 = 0.1
+Ki_2 = 0
+Kd_2 = 0
 
-vel_ref = 180
-
-Kp = 0.001
-Ki = 0
-Kd = 0
+led.on()
+calc_vel = 0
+time_prev = time_ns()
 
 
 while True:
     try:
-        error = vel_ref - vel_prev
-        duty += Kp*error
-        duty = max(15, (min(duty, 100)))
+        forward(duty_1, d1_ina1, d1_ina2, d1_pwma, duty_2, d2_ina1, d2_ina2, d2_pwma)
+        m1_enc1_val = m1_enc1.value()
+        m2_enc1_val = m2_enc1.value()
         
-        RotateCCW(duty, d1_ina1, d1_ina2, d1_pwma)
-        
-        if flanco_subida(m1_enc1.value(), enc1_prev):
-            now = time_ns()
-            time_entre =  now - time_prev_s1
-            vel_s1b1s2b2[0] = 600000000/time_entre
-            time_prev_s1 = now
+        if flanco_subida(m1_enc1_val, m1_enc1_prev):
+            if m1_enc2.value():
+                count_pulses_1 += 1
+            else:
+                count_pulses_1 -= 1
+                
+            # print(f"vueltas: {int(count_pulses/685)}, pulsos: {count_pulses}")  
             
-            
-        if flanco_bajada(m1_enc1.value(), enc1_prev):
-            now = time_ns()
-            time_entre =  now - time_prev_b1
-            vel_s1b1s2b2[1] = 600000000/time_entre
-            time_prev_b1 = now
-            
-        if flanco_subida(m1_enc2.value(), enc2_prev):
-            now = time_ns()
-            time_entre =  now - time_prev_s2
-            vel_s1b1s2b2[2] = 600000000/time_entre
-            time_prev_s2 = now
-            
-            
-        if flanco_bajada(m1_enc2.value(), enc2_prev):
-            now = time_ns()
-            time_entre =  now - time_prev_b2
-            vel_s1b1s2b2[3] = 600000000/time_entre
-            time_prev_b2 = now
-            
-        vel = (vel_s1b1s2b2[0] + vel_s1b1s2b2[1] + vel_s1b1s2b2[2] + vel_s1b1s2b2[3])/4
-        if vel != vel_prev:
-            print(f"vel ref: {vel_ref} RPM, vel actual: {int(vel)} RPM, duty: {int(duty)}%")
-        vel_prev = vel     
-        enc1_prev = m1_enc1.value()  
-        enc2_prev = m1_enc2.value()  
+        if flanco_bajada(m1_enc1_val, m1_enc1_prev):
+            if m1_enc2.value():
+                count_pulses_1 -= 1
+            else:
+                count_pulses_1 += 1
     
+            # print(f"vueltas: {int(count_pulses/685)}, pulsos: {count_pulses}")
+            
+        if flanco_subida(m2_enc1_val, m2_enc1_prev):
+            if m2_enc2.value():
+                count_pulses_2 -= 1
+            else:
+                count_pulses_2 += 1
+                            
+        if flanco_bajada(m2_enc1_val, m2_enc1_prev):
+            if m2_enc2.value():
+                count_pulses_2 += 1
+            else:
+                count_pulses_2 -= 1
+            
+        if calc_vel >= 500:
+            # Calcular velocidad
+            now = time_ns()
+            delta_time = now - time_prev
+            # Motor 1
+            delta_pulsos_1 = count_pulses_1 - count_pulses_1_prev
+            vel_lectura_1 = (87591240)*(delta_pulsos_1/delta_time)
+            
+            # Motor 2
+            delta_pulsos_2 = count_pulses_2 - count_pulses_2_prev
+            vel_lectura_2 = (87591240)*(delta_pulsos_2/delta_time)
+            
+            
+            print(f"vel ref: {vel_ref_1} RPM, vel lectura 1: {int(vel_lectura_1)} RPM, vel lectura 2: {int(vel_lectura_2)} RPM")
+            
+            time_prev = now
+            count_pulses_1_prev = count_pulses_1
+            count_pulses_2_prev = count_pulses_2
+            calc_vel = 0
+            
+            # Controlador
+            error_1 = vel_ref_1 - vel_lectura_1
+            duty_1 += Kp_1*error_1
+            duty_1 = min(max(0, duty_1), 100)
+            
+            error_2 = vel_ref_2 - vel_lectura_2
+            duty_2 += Kp_1*error_2
+            duty_2 = min(max(0, duty_2), 100)
+            
+        m1_enc1_prev = m1_enc1_val
+        m2_enc1_prev = m2_enc1_val
+        calc_vel += 1
+        
     except KeyboardInterrupt:
+        stop(d1_ina1, d1_ina2, d1_pwma, d2_ina1, d2_ina2, d2_pwma)
+        led.off()
         break
+            
+       
+        
 
-stop()
-led.off()
-print("Finished.")
+        
