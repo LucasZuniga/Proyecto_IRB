@@ -51,7 +51,6 @@ d2_stby.value(1)        # Enable the motor driver 2
 
 led.on()            # Encender el LED para indicar que el programa ha iniciado
 
-
 # Encoder read #
 delay = 10
 vel_lectura = 0
@@ -62,17 +61,17 @@ m1_enc1_prev = 1
 count_pulses = 0
 
 
-def thread():
-    while True:
-        RotateCCW(duty, d1_ina1, d1_ina2, d1_pwma)
-        sleep(5)
-        stop(d1_ina1, d1_ina2, d1_pwma, d2_ina1, d2_ina2, d2_pwma)
-        break
+# def thread():
+#     while True:
+#         RotateCCW(duty, d1_ina1, d1_ina2, d1_pwma)
+#         sleep(5)
+#         stop(d1_ina1, d1_ina2, d1_pwma, d2_ina1, d2_ina2, d2_pwma)
+#         break
 
         
-_thread.start_new_thread(thread, ())    
+# _thread.start_new_thread(thread, ())    
  
-
+RotateCCW(duty, d1_ina1, d1_ina2, d1_pwma)
 while True:
     m1_enc1_val = m1_enc1.value()
     
