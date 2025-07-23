@@ -8,7 +8,7 @@ import rp2
 import sys
 from machine import Pin, PWM
 from time import sleep, sleep_ms, ticks_us, time_ns
-from control_lib import *
+from jugador.control_lib import *
 import _thread
 
 
@@ -130,10 +130,10 @@ def serve(connection):
         except IndexError:
             pass
         if request == "/forward?":
-            forward(duty, d1_ina1, d1_ina2, d1_pwma, d2_ina1, d2_ina2, d2_pwma)
+            forward(duty, d1_ina1, d1_ina2, d1_pwma, duty, d2_ina1, d2_ina2, d2_pwma)
             state = "+"
         elif request == "/backward?":
-            backward(duty, d1_ina1, d1_ina2, d1_pwma, d2_ina1, d2_ina2, d2_pwma)
+            backward(duty, d1_ina1, d1_ina2, d1_pwma, duty, d2_ina1, d2_ina2, d2_pwma)
             state = "-"
         elif request == "/stop?":
             stop(d1_ina1, d1_ina2, d1_pwma, d2_ina1, d2_ina2, d2_pwma)

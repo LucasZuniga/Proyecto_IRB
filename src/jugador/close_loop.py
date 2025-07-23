@@ -5,7 +5,7 @@ from machine import Pin
 from utime import sleep
 from machine import Pin , PWM
 from time import sleep, sleep_ms, ticks_us, time_ns
-from control_lib import *
+from jugador.control_lib import *
 import _thread
 
 
@@ -128,7 +128,7 @@ while True:
                 count_pulses_2 -= 1
         
         
-        if calc_vel >= 500:
+        if calc_vel % 500 == 0:
             # Calcular velocidad
             now = time_ns()
             delta_time = now - time_prev
@@ -145,7 +145,6 @@ while True:
             time_prev = now
             count_pulses_1_prev = count_pulses_1
             count_pulses_2_prev = count_pulses_2
-            calc_vel = 0
             
             # Controlador
             error_1 = vel_ref_1 - vel_lectura_1
