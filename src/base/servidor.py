@@ -40,7 +40,7 @@ def enviar_a_todos(mensaje, cliente_actual):
 # aca en esta función inicializamos el servidor con una ip y socket establecido la cual los clientes se conectaras
 def iniciar_servidor():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(("127.0.0.1", 8080))
+    server_socket.bind(("127.0.0.1", 80))
     server_socket.listen(5)
     print("[Incializado servidor:] escuchando nuevos sockets:")
 
