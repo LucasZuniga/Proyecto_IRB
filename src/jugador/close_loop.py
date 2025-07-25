@@ -5,7 +5,7 @@ from machine import Pin
 from utime import sleep
 from machine import Pin , PWM
 from time import sleep, sleep_ms, ticks_us, time_ns
-from jugador.control_lib import *
+from control_lib import *
 import _thread
 
 
@@ -75,9 +75,10 @@ duty_1 = 20
 m1_enc1_prev = 1
 count_pulses_1 = 0
 count_pulses_1_prev = 0
-Kp_1 = 0.1
-Ki_1 = 0
+Kp_1 = 1
+Ki_1 = 0.4
 Kd_1 = 0
+integral_1 = 0
 
 # Motor 2
 vel_lectura_2 = 0
@@ -85,9 +86,10 @@ duty_2 = 20
 m2_enc1_prev = 1
 count_pulses_2 = 0
 count_pulses_2_prev = 0
-Kp_2 = 0.1
-Ki_2 = 0
+Kp_2 = 1
+Ki_2 = 0.4
 Kd_2 = 0
+integral_2 =0
 
 led.on()
 calc_vel = 0
@@ -148,11 +150,15 @@ while True:
             
             # Controlador
             error_1 = vel_ref_1 - vel_lectura_1
-            duty_1 += Kp_1*error_1
+            integral_1 += error_1
+            integral_1 = min(max(integral_1, -200), 200)              # Unwind, ponemos un maximo al integral para evitar problemas por acumulacion
+            duty_1 += Kp_1*error_1 + Ki_1*integral_1
             duty_1 = min(max(0, duty_1), 70)
             
             error_2 = vel_ref_1 - vel_lectura_2
-            duty_2 += Kp_1*error_2
+            integral_2 += error_2
+            integral_2 = min(max(integral_2, -200), 200)
+            duty_2 += Kp_2*error_2 + Ki_2*integral_2
             duty_2 = min(max(0, duty_2), 70)
 
 

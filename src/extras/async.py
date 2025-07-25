@@ -7,7 +7,7 @@ import socket
 from machine import Pin, PWM
 # Librerias propias
 from extras.RequestParser import RequestParser
-from jugador.WiFiConnection import WiFiConnection
+from extras.WiFiConnection import WiFiConnection
 from extras.ResponseBuilder import ResponseBuilder
 
 

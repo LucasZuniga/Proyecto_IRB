@@ -4,15 +4,14 @@ import network
 import socket
 import time
 import _thread
-import urequests as requests
 import rp2
 import sys
 from machine import Pin, PWM
 from time import sleep, sleep_ms, ticks_us, time_ns
 
 # Librerias Propias #
-from cliente import *
-from control_lib import *
+# from cliente import *
+from control_lib import forward, flanco_subida, flanco_bajada
 
 
 ##### Definicion de pines #####
@@ -53,13 +52,25 @@ d2_pwma.freq(1000)
 d2_stby.value(1)        # Enable the motor driver 2
 
 
-##### Wifi Functions #####
+##### Parametros Iniciales #####
+
+d1_pwma.freq(1000)      ### Averiguar sobre esta linea ###
+d1_stby.value(1)        # Enable the motor driver 1
+d2_pwma.freq(1000)
+d2_stby.value(1)        # Enable the motor driver 2
+
+# velocidades de referencia iniciales
+vel_ref_1 = 30
+vel_ref_2 = 30
+
+
+##### Wifi Conection #####
 
 # Wifi
 ssid = 'Lucas'
 password = '1234567890'
 
-
+# Funcion que conecta a internet (pasar a boot.py) #
 def connect():
     # Connect ro WLAN
     # rp2.country('CL')
@@ -80,21 +91,38 @@ def connect():
     return ip
 
 
-##### Main #####
+##### Server Conection #####
 
-d1_pwma.freq(1000)      ### Averiguar sobre esta linea ###
-d1_stby.value(1)        # Enable the motor driver 1
-d2_pwma.freq(1000)
-d2_stby.value(1)        # Enable the motor driver 2
+# Funcion encargada de crear instancia de cliente y conectarse al servidor
+def iniciar_cliente(ip, puerto, nombre_cliente):
+    global vel_ref_1
+    global vel_ref_2
+    vel_ref_1_prev = vel_ref_1
+    vel_ref_2_prev = vel_ref_2
+    
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((ip, puerto))
+    print("Conectado al servidor.")
 
-
-# velocidades de referencia iniciales
-vel_ref_1 = 30
-vel_ref_2 = 30
-
-
-### Close Loop  [thread 1] ###
-
+    # Enviar nombre o ID al servidor
+    client_socket.send(nombre_cliente.encode('utf-8'))
+    
+    while True:
+        try:
+            mensaje = client_socket.recv(1024).decode('utf-8')
+            if mensaje:
+                vel_rec_1, vel_rec_2 = mensaje.split(",")
+                vel_ref_1, vel_ref_2 = int(vel_rec_1), int(vel_rec_2)
+                if not vel_ref_1 == vel_ref_1_prev or not vel_ref_2 == vel_ref_2_prev:
+                    print(f"vel 1 r: {vel_ref_1} RPM, vel 1 r: {vel_ref_2} RPM")
+        except:
+            print("Conexión cerrada.")
+            break
+        
+        
+##### Close Loop #####
+        
+# Funcion encargada de actualizar constantemente las velocidades
 def close_loop():
     global vel_ref_1
     global vel_ref_2
@@ -105,9 +133,10 @@ def close_loop():
     m1_enc1_prev = 1
     count_pulses_1 = 0
     count_pulses_1_prev = 0
-    Kp_1 = 0.1
-    Ki_1 = 0
+    Kp_1 = 0.6
+    Ki_1 = 0.1
     Kd_1 = 0
+    integral_1 = 0
 
     # Motor 2
     vel_lectura_2 = 0
@@ -115,9 +144,10 @@ def close_loop():
     m2_enc1_prev = 1
     count_pulses_2 = 0
     count_pulses_2_prev = 0
-    Kp_2 = 0.1
-    Ki_2 = 0
+    Kp_2 = 1
+    Ki_2 = 0.4
     Kd_2 = 0
+    integral_2 =0
 
     led.on()
     calc_vel = 0
@@ -176,30 +206,42 @@ def close_loop():
             
             # Controlador
             error_1 = vel_ref_1 - vel_lectura_1
-            duty_1 += Kp_1*error_1
-            duty_1 = min(max(0, duty_1), 100)
+            integral_1 += error_1
+            integral_1 = min(max(integral_1, -200), 200)              # Unwind, ponemos un maximo al integral para evitar problemas por acumulacion
+            duty_1 += Kp_1*error_1 + Ki_1*integral_1
+            duty_1 = min(max(0, duty_1), 70)
             
             error_2 = vel_ref_2 - vel_lectura_2
-            duty_2 += Kp_2*error_2
-            duty_2 = min(max(0, duty_2), 100)
+            integral_2 += error_2
+            integral_2 = min(max(integral_2, -200), 200)
+            duty_2 += Kp_2*error_2 + Ki_2*integral_2
+            duty_2 = min(max(0, duty_2), 70)
 
 
         m1_enc1_prev = m1_enc1_val
         m2_enc1_prev = m2_enc1_val
         calc_vel += 1
 
+
+##### Main #####
+
+### Close Loop  [thread 1] ###
 second_thread = _thread.start_new_thread(close_loop, ())
 
-### Recibir Velocidades de Referencia de Base  [thread 0] ###
 
 # Conectar a WiFi
 ip_client = connect()
 
-# Parametros de la coneccion
-ip_server = "127.0.0.1"
-port = 80
+# Parametros de la coneccion al servidor
+ip_server = '10.165.212.53'
+port = 8080
 robot_id = "FutBot_1"
 
-iniciar_cliente(ip_server, port, robot_id)
+### Recibir Velocidades de Referencia de Base  [thread 0] ###
+# iniciar_cliente(ip_server, port, robot_id)
+while True:
+    print(f"enc_1.1: {m1_enc1.value()}, enc_1.2: {m1_enc2.value()}, enc_2.1: {m2_enc1.value()}, enc_2.2: {m2_enc2.value()}, ")
+    time.sleep_ms(10)
+
 
 
