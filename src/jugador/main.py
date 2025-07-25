@@ -6,18 +6,27 @@ import time
 import _thread
 import rp2
 import sys
+import uasyncio
 from machine import Pin, PWM
 from time import sleep, sleep_ms, ticks_us, time_ns
 
 # Librerias Propias #
 # from cliente import *
-from control_lib import forward, flanco_subida, flanco_bajada
+from control_lib import *
 
 
 ##### Definicion de pines #####
 
-# LED
+# LEDS
 led = Pin("LED", Pin.OUT)
+led_verde = Pin(20, Pin.OUT)
+led_amarillo = Pin(19, Pin.OUT)
+led_azul = Pin(18, Pin.OUT)
+
+led_azul.off()
+led_verde.off()
+led_amarillo.off()
+led.off()
 
 # Driver 1
 d1_stby = Pin(3, Pin.OUT)
@@ -66,29 +75,34 @@ vel_ref_2 = 30
 
 ##### Wifi Conection #####
 
-# Wifi
-ssid = 'Lucas'
-password = '1234567890'
-
-# Funcion que conecta a internet (pasar a boot.py) #
-def connect():
+# Funcion que conecta a WiFi y avisa en caso de desconeccion
+def connect(ssid, password):
     # Connect ro WLAN
-    # rp2.country('CL')
     wlan = network.WLAN(network.STA_IF)
+    rp2.country('CL')
+    wlan.PM_PERFORMANCE
     wlan.active(True)
     wlan.connect(ssid, password)
     while not wlan.isconnected():
-        if rp2.bootsel_button():
-            sys.exit()
         print('Wating for connection...')
-        led.on()
-        time.sleep(0.5)
-        led.off()
-        time.sleep(0.5)
+        led_verde.on()
+        sleep_ms(500)
+        led_verde.off()
+        sleep_ms(500)
+        
+    led_verde.on()
     ip = wlan.ifconfig()[0]
     print(f'Conected on {ip}')
-    led.on()
-    return ip
+
+async def check_wifi():
+    wlan = network.WLAN(network.STA_IF)
+    while wlan.isconnected():
+        led_verde.on()
+        await uasyncio.sleep_ms(500)
+    
+    # Nos avisa en caso de desconectarse
+    led_verde.off()
+    wlan.disconnect()
 
 
 ##### Server Conection #####
@@ -144,14 +158,14 @@ def close_loop():
     m2_enc1_prev = 1
     count_pulses_2 = 0
     count_pulses_2_prev = 0
-    Kp_2 = 1
-    Ki_2 = 0.4
+    Kp_2 = 0.6
+    Ki_2 = 0.1
     Kd_2 = 0
     integral_2 =0
 
     led.on()
     calc_vel = 0
-    time_prev = time_ns()    
+    time_prev = time_ns()
     
     while True:
         forward(duty_1, d1_ina1, d1_ina2, d1_pwma, duty_2, d2_ina1, d2_ina2, d2_pwma)
@@ -187,6 +201,9 @@ def close_loop():
         
         
         if calc_vel % 500 == 0:
+            led_amarillo.on()
+            
+            calc_vel = 0
             # Calcular velocidad
             now = time_ns()
             delta_time = now - time_prev
@@ -199,8 +216,8 @@ def close_loop():
             vel_lectura_2 = (87591240)*(delta_pulsos_2/delta_time)
             
             # print(f"vel ref: {vel_ref_1} RPM, vel lectura 1: {int(vel_lectura_1)} RPM, vel lectura 2: {int(vel_lectura_2)} RPM")
+            # print(f"vel ref: {vel_ref_1} RPM, vel lectura 1: {int(vel_lectura_1)} RPM, duty: {duty_1}")
             
-            time_prev = now
             count_pulses_1_prev = count_pulses_1
             count_pulses_2_prev = count_pulses_2
             
@@ -209,13 +226,16 @@ def close_loop():
             integral_1 += error_1
             integral_1 = min(max(integral_1, -200), 200)              # Unwind, ponemos un maximo al integral para evitar problemas por acumulacion
             duty_1 += Kp_1*error_1 + Ki_1*integral_1
-            duty_1 = min(max(0, duty_1), 70)
+            duty_1 = min(max(0, duty_1), 100)
             
             error_2 = vel_ref_2 - vel_lectura_2
             integral_2 += error_2
             integral_2 = min(max(integral_2, -200), 200)
             duty_2 += Kp_2*error_2 + Ki_2*integral_2
-            duty_2 = min(max(0, duty_2), 70)
+            duty_2 = min(max(0, duty_2), 100)
+            
+            time_prev = time_ns()
+            led_amarillo.off()
 
 
         m1_enc1_prev = m1_enc1_val
@@ -226,22 +246,38 @@ def close_loop():
 ##### Main #####
 
 ### Close Loop  [thread 1] ###
-second_thread = _thread.start_new_thread(close_loop, ())
+# second_thread = _thread.start_new_thread(close_loop, ())
 
 
-# Conectar a WiFi
-ip_client = connect()
 
-# Parametros de la coneccion al servidor
+async def main():
+    uasyncio.create_task(check_wifi())
+    
+    while True:
+        await uasyncio.sleep(0)
+
+# Parametros de la coneccion al servidor y red WiFi
+
+# WiFi
+ssid = 'Lucas'
+password = '1234567890'
+# Servidor
 ip_server = '10.165.212.53'
 port = 8080
 robot_id = "FutBot_1"
 
-### Recibir Velocidades de Referencia de Base  [thread 0] ###
+connect(ssid, password)
+
+
+### Recibir Velocidades de Referencia de Base y chequear conexion a WiFi [thread 0] ###
+
+try:
+    uasyncio.run(main())
+    
+finally:
+    uasyncio.new_event_loop()
 # iniciar_cliente(ip_server, port, robot_id)
-while True:
-    print(f"enc_1.1: {m1_enc1.value()}, enc_1.2: {m1_enc2.value()}, enc_2.1: {m2_enc1.value()}, enc_2.2: {m2_enc2.value()}, ")
-    time.sleep_ms(10)
+
 
 
 

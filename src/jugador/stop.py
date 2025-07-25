@@ -48,6 +48,7 @@ def StopMotor(m1, m2, pwm):
     m2.value(0)
     pwm.duty_u16(0)
 
+
 def stop():
     StopMotor(d1_ina1, d1_ina2, d1_pwma)
     StopMotor(d2_ina1, d2_ina2, d2_pwma)
