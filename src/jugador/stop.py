@@ -10,8 +10,16 @@ from time import sleep, sleep_ms, ticks_us
 
 ##### Definicion de pines #####
 
-# LED
+# LEDS
 led = Pin("LED", Pin.OUT)
+led_verde = Pin(20, Pin.OUT)
+led_amarillo = Pin(19, Pin.OUT)
+led_azul = Pin(18, Pin.OUT)
+
+led_azul.off()
+led_verde.off()
+led_amarillo.off()
+led.off()
 
 # Driver 1
 d1_stby = Pin(3, Pin.OUT)

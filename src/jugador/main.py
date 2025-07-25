@@ -69,10 +69,10 @@ d2_pwma.freq(1000)
 d2_stby.value(1)        # Enable the motor driver 2
 
 # velocidades de referencia iniciales
-vel_ref_1 = 30
-vel_ref_2 = 30
+vel_ref_1 = 0
+vel_ref_2 = 0
 
-
+#---------------------------------------------------------------------------
 ##### Wifi Conection #####
 
 # Funcion que conecta a WiFi
@@ -101,43 +101,42 @@ async def check_wifi():
         led_verde.on()
         await uasyncio.sleep_ms(500)
     
-    # Nos avisa en caso de desconectarse
     led_verde.off()
+    StopMotor(d1_ina1, d1_ina2, d1_pwma)
+    StopMotor(d2_ina1, d2_ina2, d2_pwma)
     wlan.disconnect()
 
 
 ##### Server Conection #####
 
 # Funcion encargada de crear instancia de cliente y conectarse al servidor
-async def iniciar_cliente(nombre_cliente):
-    print("Iniciando coneccion al servidor...")
+async def iniciar_cliente(ip, puerto, nombre_cliente):
     global vel_ref_1
     global vel_ref_2
-    vel_ref_1_prev = vel_ref_1
-    vel_ref_2_prev = vel_ref_2
-    ip_server = '10.165.212.53'
-    port = 8080
     
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     print("Iniciando coneccion al servidor...")
-    server_socket.connect((ip_server, port))
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.connect((ip, puerto))
+    led_azul.on()
     print("Conectado al servidor")
 
     # Enviar nombre o ID al servidor
     server_socket.send(nombre_cliente.encode('utf-8'))
+    print("Identificacion enviada")
     
     while True:
         try:
             mensaje = server_socket.recv(1024).decode('utf-8')
             if mensaje:
+                print(mensaje)
                 vel_rec_1, vel_rec_2 = mensaje.split(",")
                 vel_ref_1, vel_ref_2 = int(vel_rec_1), int(vel_rec_2)
-                if not vel_ref_1 == vel_ref_1_prev or not vel_ref_2 == vel_ref_2_prev:
-                    print(f"vel 1 r: {vel_ref_1} RPM, vel 1 r: {vel_ref_2} RPM")
-        except:
-            print("Conexión cerrada.")
+                print(f"vel 1 r: {vel_ref_1} RPM, vel 1 r: {vel_ref_2} RPM")
+        except KeyboardInterrupt:
+            print("Conexión cerrada")
+            led_azul.off()
             break
-        await uasyncio.sleep_ms(100)
+        await uasyncio.sleep_ms(300)
         
         
 ##### Close Loop #####
@@ -206,9 +205,7 @@ def close_loop():
                 count_pulses_2 -= 1
         
         
-        if calc_vel % 500 == 0:
-            led_amarillo.on()
-            
+        if calc_vel % 500 == 0:            
             calc_vel = 0
             # Calcular velocidad
             now = time_ns()
@@ -241,27 +238,29 @@ def close_loop():
             duty_2 = min(max(0, duty_2), 100)
             
             time_prev = time_ns()
-            led_amarillo.off()
-
 
         m1_enc1_prev = m1_enc1_val
         m2_enc1_prev = m2_enc1_val
         calc_vel += 1
 
 
-##### Main #####
+##### Main Thread Function #####
 
-### Close Loop  [thread 1] ###
-# second_thread = _thread.start_new_thread(close_loop, ())
-
-
-
-async def main(nombre_cliente):
+async def main(ip, puerto, nombre_cliente):
     uasyncio.create_task(check_wifi())
-    uasyncio.create_task(iniciar_cliente(nombre_cliente))
+    uasyncio.create_task(iniciar_cliente(ip, puerto, nombre_cliente))
     
     while True:
         await uasyncio.sleep_ms(10)
+
+
+#---------------------------------------------------------------------------
+### Close Loop  [thread 1] ###
+
+second_thread = _thread.start_new_thread(close_loop, ())
+
+
+### Recibir Velocidades de Referencia de Base y chequear conexion a WiFi [thread 0] ###
 
 # Parametros de la coneccion al servidor y red WiFi
 
@@ -273,20 +272,16 @@ ip_server = '10.165.212.53'
 port = 8080
 robot_id = "FutBot_1"
 
+
 connect(ssid, password)
 
 # iniciar_cliente(ip_server, port, robot_id)
-
-
-
-### Recibir Velocidades de Referencia de Base y chequear conexion a WiFi [thread 0] ###
-
 try:
-    uasyncio.run(main(robot_id))
+    uasyncio.run(main(ip_server, port, robot_id))
     
 finally:
     uasyncio.new_event_loop()
-# iniciar_cliente(ip_server, port, robot_id)
+
 
 
 
