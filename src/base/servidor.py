@@ -11,7 +11,7 @@ def iniciar_servidor():
     # global serv_vel_1_r
     # global serv_vel_1_l
     global vels_1
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server_socket.bind(("0.0.0.0", 8080))
     server_socket.listen(5)
     print("[Incializado servidor:] escuchando nuevos sockets:")

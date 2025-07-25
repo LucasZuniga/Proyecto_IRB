@@ -75,7 +75,7 @@ vel_ref_2 = 30
 
 ##### Wifi Conection #####
 
-# Funcion que conecta a WiFi y avisa en caso de desconeccion
+# Funcion que conecta a WiFi
 def connect(ssid, password):
     # Connect ro WLAN
     wlan = network.WLAN(network.STA_IF)
@@ -94,6 +94,7 @@ def connect(ssid, password):
     ip = wlan.ifconfig()[0]
     print(f'Conected on {ip}')
 
+# Funcion que avisa en caso de desconeccion
 async def check_wifi():
     wlan = network.WLAN(network.STA_IF)
     while wlan.isconnected():
@@ -108,22 +109,26 @@ async def check_wifi():
 ##### Server Conection #####
 
 # Funcion encargada de crear instancia de cliente y conectarse al servidor
-def iniciar_cliente(ip, puerto, nombre_cliente):
+async def iniciar_cliente(nombre_cliente):
+    print("Iniciando coneccion al servidor...")
     global vel_ref_1
     global vel_ref_2
     vel_ref_1_prev = vel_ref_1
     vel_ref_2_prev = vel_ref_2
+    ip_server = '10.165.212.53'
+    port = 8080
     
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((ip, puerto))
-    print("Conectado al servidor.")
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    print("Iniciando coneccion al servidor...")
+    server_socket.connect((ip_server, port))
+    print("Conectado al servidor")
 
     # Enviar nombre o ID al servidor
-    client_socket.send(nombre_cliente.encode('utf-8'))
+    server_socket.send(nombre_cliente.encode('utf-8'))
     
     while True:
         try:
-            mensaje = client_socket.recv(1024).decode('utf-8')
+            mensaje = server_socket.recv(1024).decode('utf-8')
             if mensaje:
                 vel_rec_1, vel_rec_2 = mensaje.split(",")
                 vel_ref_1, vel_ref_2 = int(vel_rec_1), int(vel_rec_2)
@@ -132,6 +137,7 @@ def iniciar_cliente(ip, puerto, nombre_cliente):
         except:
             print("Conexión cerrada.")
             break
+        await uasyncio.sleep_ms(100)
         
         
 ##### Close Loop #####
@@ -250,11 +256,12 @@ def close_loop():
 
 
 
-async def main():
+async def main(nombre_cliente):
     uasyncio.create_task(check_wifi())
+    uasyncio.create_task(iniciar_cliente(nombre_cliente))
     
     while True:
-        await uasyncio.sleep(0)
+        await uasyncio.sleep_ms(10)
 
 # Parametros de la coneccion al servidor y red WiFi
 
@@ -268,11 +275,14 @@ robot_id = "FutBot_1"
 
 connect(ssid, password)
 
+# iniciar_cliente(ip_server, port, robot_id)
+
+
 
 ### Recibir Velocidades de Referencia de Base y chequear conexion a WiFi [thread 0] ###
 
 try:
-    uasyncio.run(main())
+    uasyncio.run(main(robot_id))
     
 finally:
     uasyncio.new_event_loop()
