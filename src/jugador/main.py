@@ -2,7 +2,6 @@
 
 import network
 import socket
-import time
 import _thread
 import rp2
 import sys
@@ -224,8 +223,8 @@ def close_loop():
             count_pulses_2_prev = count_pulses_2
             
             # Controladores
-            duty_1, error_1_prev, integral_1 = Controlador(duty_1, delta_time, vel_ref_1, vel_lectura_1, Kp_1, Ki_1, Kd_1, integral_1, error_1_prev)
-            duty_2, error_2_prev, integral_2 = Controlador(duty_2, delta_time, vel_ref_2, vel_lectura_2, Kp_2, Ki_2, Kd_2, integral_2, error_2_prev)
+            duty_1, error_1_prev, integral_1 = C_PID(duty_1, delta_time, vel_ref_1, vel_lectura_1, Kp_1, Ki_1, Kd_1, integral_1, error_1_prev)
+            duty_2, error_2_prev, integral_2 = C_PID(duty_2, delta_time, vel_ref_2, vel_lectura_2, Kp_2, Ki_2, Kd_2, integral_2, error_2_prev)
 
             time_prev = time_ns()
 
