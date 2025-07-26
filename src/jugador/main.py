@@ -156,6 +156,7 @@ def close_loop():
     Ki_1 = 0.1
     Kd_1 = 0
     integral_1 = 0
+    error_1_prev = 0
 
     # Motor 2
     vel_lectura_2 = 0
@@ -167,13 +168,14 @@ def close_loop():
     Ki_2 = 0.1
     Kd_2 = 0
     integral_2 =0
+    error_2_prev = 0
 
     led.on()
     calc_vel = 0
     time_prev = time_ns()
     
     while True:
-        forward(duty_1, d1_ina1, d1_ina2, d1_pwma, duty_2, d2_ina1, d2_ina2, d2_pwma)
+        move(duty_1, d1_ina1, d1_ina2, d1_pwma, duty_2, d2_ina1, d2_ina2, d2_pwma)
         m1_enc1_val = m1_enc1.value()
         m2_enc1_val = m2_enc1.value()
         
@@ -194,15 +196,15 @@ def close_loop():
         # Pulse Counter Motor 2
         if flanco_subida(m2_enc1_val, m2_enc1_prev):
             if m2_enc2.value():
-                count_pulses_2 -= 1
-            else:
                 count_pulses_2 += 1
+            else:
+                count_pulses_2 -= 1
                             
         if flanco_bajada(m2_enc1_val, m2_enc1_prev):
             if m2_enc2.value():
-                count_pulses_2 += 1
-            else:
                 count_pulses_2 -= 1
+            else:
+                count_pulses_2 += 1
         
         
         if calc_vel % 500 == 0:            
@@ -218,25 +220,13 @@ def close_loop():
             delta_pulsos_2 = count_pulses_2 - count_pulses_2_prev
             vel_lectura_2 = (87591240)*(delta_pulsos_2/delta_time)
             
-            # print(f"vel ref: {vel_ref_1} RPM, vel lectura 1: {int(vel_lectura_1)} RPM, vel lectura 2: {int(vel_lectura_2)} RPM")
-            # print(f"vel ref: {vel_ref_1} RPM, vel lectura 1: {int(vel_lectura_1)} RPM, duty: {duty_1}")
-            
             count_pulses_1_prev = count_pulses_1
             count_pulses_2_prev = count_pulses_2
             
-            # Controlador
-            error_1 = vel_ref_1 - vel_lectura_1
-            integral_1 += error_1
-            integral_1 = min(max(integral_1, -200), 200)              # Unwind, ponemos un maximo al integral para evitar problemas por acumulacion
-            duty_1 += Kp_1*error_1 + Ki_1*integral_1
-            duty_1 = min(max(0, duty_1), 100)
-            
-            error_2 = vel_ref_2 - vel_lectura_2
-            integral_2 += error_2
-            integral_2 = min(max(integral_2, -200), 200)
-            duty_2 += Kp_2*error_2 + Ki_2*integral_2
-            duty_2 = min(max(0, duty_2), 100)
-            
+            # Controladores
+            duty_1, error_1_prev, integral_1 = Controlador(duty_1, delta_time, vel_ref_1, vel_lectura_1, Kp_1, Ki_1, Kd_1, integral_1, error_1_prev)
+            duty_2, error_2_prev, integral_2 = Controlador(duty_2, delta_time, vel_ref_2, vel_lectura_2, Kp_2, Ki_2, Kd_2, integral_2, error_2_prev)
+
             time_prev = time_ns()
 
         m1_enc1_prev = m1_enc1_val
@@ -275,14 +265,8 @@ robot_id = "FutBot_1"
 
 connect(ssid, password)
 
-# iniciar_cliente(ip_server, port, robot_id)
 try:
     uasyncio.run(main(ip_server, port, robot_id))
     
 finally:
     uasyncio.new_event_loop()
-
-
-
-
-

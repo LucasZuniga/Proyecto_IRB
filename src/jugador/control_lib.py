@@ -32,6 +32,17 @@ def forward(duty_1, d1_ina1, d1_ina2, d1_pwma, duty_2, d2_ina1, d2_ina2, d2_pwma
     RotateCCW(duty_1, d1_ina1, d1_ina2, d1_pwma)
     RotateCW(duty_2, d2_ina1, d2_ina2, d2_pwma)
     
+def move(duty_1, d1_ina1, d1_ina2, d1_pwma, duty_2, d2_ina1, d2_ina2, d2_pwma):
+    if duty_1 >= 0:
+        RotateCCW(duty_1, d1_ina1, d1_ina2, d1_pwma)
+    else:
+        RotateCW(-duty_1, d1_ina1, d1_ina2, d1_pwma)
+        
+    if duty_2 >= 0:
+        RotateCCW(duty_2, d2_ina1, d2_ina2, d2_pwma)
+    else:
+        RotateCW(-duty_2, d2_ina1, d2_ina2, d2_pwma)
+                
 def stop(d1_ina1, d1_ina2, d1_pwma, d2_ina1, d2_ina2, d2_pwma):
     StopMotor(d1_ina1, d1_ina2, d1_pwma)
     StopMotor(d2_ina1, d2_ina2, d2_pwma)
@@ -68,3 +79,13 @@ def flanco_bajada(bit, bit_prev):
     if bit_prev and not bit:
         return True
     return False
+
+def Controlador(duty, dt, vel_ref, vel_actual, Kp, Ki, Kd, integral, error_prev):
+    error = vel_ref - vel_actual
+    integral += error
+    integral = min(max(integral, -200), 200)              # Unwind, ponemos un maximo al integral para evitar problemas por acumulacion
+    deriv = (error-error_prev)/dt
+    duty += Kp*error + Ki*integral + Kd*deriv
+    duty = min(max(-100, duty), 100)
+    
+    return duty, error, integral
