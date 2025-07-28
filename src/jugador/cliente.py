@@ -1,4 +1,5 @@
 import socket
+# import uasyncio
 
 def iniciar_cliente(ip, puerto, nombre_cliente):
     global vel_ref_1
@@ -20,6 +21,7 @@ def iniciar_cliente(ip, puerto, nombre_cliente):
         except:
             print("Conexión cerrada.")
             break
+
 
 
 if __name__ == "__main__":

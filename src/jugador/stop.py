@@ -6,6 +6,7 @@ Libreria para el control de actuadores del robot IRB.
 
 from machine import Pin , PWM
 from time import sleep, sleep_ms, ticks_us
+import network
 
 
 ##### Definicion de pines #####
@@ -71,3 +72,5 @@ d2_stby.value(1)        # Enable the motor driver 2
 led.off()            # Encender el LED para indicar que el programa ha iniciado
 
 stop()
+wlan = network.WLAN(network.STA_IF)
+wlan.disconnect()

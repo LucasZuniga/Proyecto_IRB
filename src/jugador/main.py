@@ -10,8 +10,9 @@ from machine import Pin, PWM
 from time import sleep, sleep_ms, ticks_us, time_ns
 
 # Librerias Propias #
-# from cliente import *
+# from cliente import iniciar_cliente
 from control_lib import *
+from WiFi import connect, check_wifi
 
 
 ##### Definicion de pines #####
@@ -68,74 +69,47 @@ d2_pwma.freq(1000)
 d2_stby.value(1)        # Enable the motor driver 2
 
 # velocidades de referencia iniciales
-vel_ref_1 = 0
-vel_ref_2 = 0
+vel_ref_1 = 10
+vel_ref_2 = 10
 
 #---------------------------------------------------------------------------
-##### Wifi Conection #####
-
-# Funcion que conecta a WiFi
-def connect(ssid, password):
-    # Connect ro WLAN
-    wlan = network.WLAN(network.STA_IF)
-    rp2.country('CL')
-    wlan.PM_PERFORMANCE
-    wlan.active(True)
-    wlan.connect(ssid, password)
-    while not wlan.isconnected():
-        print('Wating for connection...')
-        led_verde.on()
-        sleep_ms(500)
-        led_verde.off()
-        sleep_ms(500)
-        
-    led_verde.on()
-    ip = wlan.ifconfig()[0]
-    print(f'Conected on {ip}')
-
-# Funcion que avisa en caso de desconeccion
-async def check_wifi():
-    wlan = network.WLAN(network.STA_IF)
-    while wlan.isconnected():
-        led_verde.on()
-        await uasyncio.sleep_ms(500)
-    
-    led_verde.off()
-    StopMotor(d1_ina1, d1_ina2, d1_pwma)
-    StopMotor(d2_ina1, d2_ina2, d2_pwma)
-    wlan.disconnect()
-
-
 ##### Server Conection #####
 
 # Funcion encargada de crear instancia de cliente y conectarse al servidor
-async def iniciar_cliente(ip, puerto, nombre_cliente):
+async def iniciar_cliente(ip, puerto, nombre_cliente, wlan, led_cliente):
     global vel_ref_1
-    global vel_ref_2
-    
-    print("Iniciando coneccion al servidor...")
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.connect((ip, puerto))
-    led_azul.on()
-    print("Conectado al servidor")
-
-    # Enviar nombre o ID al servidor
-    server_socket.send(nombre_cliente.encode('utf-8'))
-    print("Identificacion enviada")
+    global vel_ref_2    
     
     while True:
-        try:
-            mensaje = server_socket.recv(1024).decode('utf-8')
-            if mensaje:
-                print(mensaje)
-                vel_rec_1, vel_rec_2 = mensaje.split(",")
-                vel_ref_1, vel_ref_2 = int(vel_rec_1), int(vel_rec_2)
-                print(f"vel 1 r: {vel_ref_1} RPM, vel 1 r: {vel_ref_2} RPM")
-        except KeyboardInterrupt:
-            print("Conexión cerrada")
-            led_azul.off()
-            break
-        await uasyncio.sleep_ms(300)
+        if wlan.isconnected():
+            print("Iniciando coneccion al servidor...")
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.connect((ip, puerto))
+            led_cliente.on()
+            print("Conectado al servidor")
+
+            # Enviar nombre o ID al servidor
+            server_socket.send(nombre_cliente.encode('utf-8'))
+            print("Identificacion enviada")
+            
+            while True:
+                try:
+                    mensaje = server_socket.recv(1024).decode('utf-8')
+                    if mensaje:
+                        print(mensaje)
+                        vel_rec_1, vel_rec_2 = mensaje.split(",")
+                        vel_ref_1, vel_ref_2 = int(vel_rec_1), int(vel_rec_2)
+                        print(f"vel 1 r: {vel_ref_1} RPM, vel 1 r: {vel_ref_2} RPM")
+                except KeyboardInterrupt:
+                    print("Server connection close")
+                    led_cliente.off()
+                    break
+                
+                await uasyncio.sleep_ms(100)
+        else:
+            pass
+        
+        await uasyncio.sleep(1)
         
         
 ##### Close Loop #####
@@ -195,15 +169,15 @@ def close_loop():
         # Pulse Counter Motor 2
         if flanco_subida(m2_enc1_val, m2_enc1_prev):
             if m2_enc2.value():
-                count_pulses_2 += 1
-            else:
                 count_pulses_2 -= 1
+            else:
+                count_pulses_2 += 1
                             
         if flanco_bajada(m2_enc1_val, m2_enc1_prev):
             if m2_enc2.value():
-                count_pulses_2 -= 1
-            else:
                 count_pulses_2 += 1
+            else:
+                count_pulses_2 -= 1
         
         
         if calc_vel % 500 == 0:            
@@ -235,9 +209,9 @@ def close_loop():
 
 ##### Main Thread Function #####
 
-async def main(ip, puerto, nombre_cliente):
-    uasyncio.create_task(check_wifi())
-    uasyncio.create_task(iniciar_cliente(ip, puerto, nombre_cliente))
+async def main(ssid, password, wlan, led_wifi, ip, puerto, nombre_cliente, led_cliente):
+    uasyncio.create_task(check_wifi(ssid, password, wlan, led_wifi))
+    uasyncio.create_task(iniciar_cliente(ip, puerto, nombre_cliente, wlan, led_cliente))
     
     while True:
         await uasyncio.sleep_ms(10)
@@ -251,21 +225,17 @@ second_thread = _thread.start_new_thread(close_loop, ())
 
 ### Recibir Velocidades de Referencia de Base y chequear conexion a WiFi [thread 0] ###
 
-# Parametros de la coneccion al servidor y red WiFi
-
 # WiFi
 ssid = 'Lucas'
 password = '1234567890'
+wlan = network.WLAN(network.STA_IF)
 # Servidor
-ip_server = '10.165.212.53'
+ip_server = '10.192.39.53'
 port = 8080
 robot_id = "FutBot_1"
 
-
-connect(ssid, password)
-
 try:
-    uasyncio.run(main(ip_server, port, robot_id))
+    uasyncio.run(main(ssid, password, wlan, led_verde, ip_server, port, robot_id, led_azul))
     
 finally:
     uasyncio.new_event_loop()

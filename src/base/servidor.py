@@ -20,16 +20,19 @@ def iniciar_servidor():
         # Agrega clientes nuevos
         client_socket, client_address = server_socket.accept()
         new = True
+        client_id = client_socket.recv(1024).decode('utf-8')
         for cliente in clientes:
             if client_address[0] == cliente[1]:
-                print(f"Cliente {client_address[0]} reconectado")
+                print("")
+                print(f"Cliente {client_id} reconectado")
                 new = False
                 clientes.remove(cliente)
         if new:
-            print(f"[Conexión nueva establecida: ] Cliente {client_address} conectado")
-            print(f"lista de clientes: {clientes}")
+            print("")
+            print(f"[Conexión nueva establecida] Cliente {client_id}, IP {client_address[0]} conectado")
+            # print(f"lista de clientes: {clientes[:][3]}")
             
-        clientes.append([client_socket, client_address[0], client_address[1]])
+        clientes.append([client_socket, client_address[0], client_address[1], client_id])
         
 # Envia velocidades a clientes en caso de haber cambiado
 def enviar_vel():

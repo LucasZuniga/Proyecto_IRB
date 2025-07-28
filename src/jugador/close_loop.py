@@ -53,8 +53,8 @@ d2_stby.value(1)        # Enable the motor driver 2
 
 # Set vel reference [thread 1] #
 
-vel_ref_1 = 60
-vel_ref_2 = 60
+vel_ref_1 = 0
+vel_ref_2 = 0
 
 def set_vel_ref():
     global vel_ref_1
@@ -98,7 +98,7 @@ time_prev = time_ns()
 
 while True:
     try:
-        forward(duty_1, d1_ina1, d1_ina2, d1_pwma, duty_2, d2_ina1, d2_ina2, d2_pwma)
+        RotateCW(duty_2, d2_ina1, d2_ina2, d2_pwma)
         m1_enc1_val = m1_enc1.value()
         m2_enc1_val = m2_enc1.value()
         
