@@ -230,7 +230,7 @@ ssid = 'Lucas'
 password = '1234567890'
 wlan = network.WLAN(network.STA_IF)
 # Servidor
-ip_server = '10.192.39.53'
+ip_server = '10.169.50.53'
 port = 8080
 robot_id = "FutBot_1"
 
