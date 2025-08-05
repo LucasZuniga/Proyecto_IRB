@@ -3,6 +3,7 @@ import cv2
 import time
 import math
 import _thread
+from simple_pid import PID
 
 class irb_sim:
     robot1_pos = np.array([0,0,0])  # --> [x, y, thetha]
@@ -23,10 +24,8 @@ class irb_sim:
         # dibujar 
         cv2.circle(self.game_field,(r1_fx, r1_fy), 10, (0,0,255), -1)
         cv2.circle(self.game_field,(r1_bx, r1_by), 10, (255,0,0), -1)
-        cv2.circle(self.game_field,(200, 200), 10, (150,180,255), -1)
-        cv2.circle(self.game_field,(170, 200), 10, (0,255,0), -1)
         cv2.circle(self.game_field,(self.ball_pos[0],self.ball_pos[1]), 10, (0, 255, 255), -1)
-  
+
 global frame
 global nClick
 
@@ -77,42 +76,60 @@ r1Ar = 0
 LowerColorError = np.array([-10,-35,-35])
 UpperColorError = np.array([10,35,35])
 
+# Evita divisiones por cero
+epcilon = 0.00001
+
 
 global grupo1
 grupo1 = irb_sim()
 
+# Backend
 def start(delay):
-	global r1Ar
-	global r1Al
-	#r1Ar: PWM rueda derecha
-	#r1Al: PWM rueda izquierda
-	#dit: distancia robot-pelota
-	#theta: angulo robot-pelota
- 
-	time.sleep(2)
-	r1Al = 20
-	r1Ar = 20
-	time.sleep(5)
-	r1Al = 10
-	r1Ar = 3
-	time.sleep(5)
-	r1Al = 10
-	r1Ar = 10
-	time.sleep(5)
-	r1Al = 0
-	r1Ar = 0
- 
-	print(theta)
-	print(dist)
-	while(True):
-		#Ciclo de programacion
-		print("Angulo: " + str(theta))
-		print("Distancia: " + str(dist))
-		time.sleep(0.5)
+    global r1Ar
+    global r1Al
+    #r1Ar: PWM rueda derecha
+    #r1Al: PWM rueda izquierda
+    #dist: distancia robot-pelota
+    #theta: angulo robot-pelota
+
+    pid_ang = PID(1, 0.1, 0.05, setpoint=0)
+    pid_ang.output_limits = (-250, 250)
+    pid_ang.sample_time = 0.2
+    tolerancia = 10
+    
+    pid_lin = PID(1, 0, 0, setpoint=20)
+    pid_lin.output_limits = (-250, 250)
+    pid_lin.sample_time = 0.2
+
+
+    while(True):
+        #Ciclo de programacion
+
+        if abs(dist) < 15:
+            r1Ar = 0
+            r1Al = 0
+
+        else:
+            control_R = -pid_ang(theta)
+            control_L = pid_ang(theta)
+
+            # Correccion linearl solo si el agulo es pequeño
+            if abs(theta) < tolerancia:
+                control_R -= pid_lin(dist)
+                control_L -= pid_lin(dist)
+                
+                
+            r1Ar = control_R
+            r1Al = control_L
+        
+        print("Angulo: " + str(theta))
+        print("Distancia: " + str(dist))
+        time.sleep(0.2)
 	
 
 cv2.namedWindow('realidad', cv2.WINDOW_AUTOSIZE)
 
+# Frontend
 def sim_run(delay):
 	global grupo1
 	global r1Ar
@@ -159,7 +176,7 @@ cv2.namedWindow('res',  cv2.WINDOW_AUTOSIZE )
 cv2.moveWindow('res', 700, 100)
 
 _thread.start_new_thread(sim_run, (1,))
-_thread.start_new_thread ( start, (1,) )
+_thread.start_new_thread(  start, (1,))
 
 frame = grupo1.game_field
 frame = grupo1.game_field
@@ -271,9 +288,9 @@ while(True):
 		theta = 0
 		if(am*bm > 0):
 			if(d1 < d2):
-				theta = int(math.acos(ab/(am*bm))*180/math.pi)
+				theta = int(math.acos(ab/(am*bm + epcilon))*180/math.pi)
 			else:
-				theta = -int(math.acos(ab/(am*bm))*180/math.pi)
+				theta = -int(math.acos(ab/(am*bm + epcilon))*180/math.pi)
 		else:
 			theta = 0
 
@@ -284,7 +301,7 @@ while(True):
 		cv2.line(res, (Xpx-int(Xpx*3/2), Ypx), (Xpx+int(Xpx*3/2), Ypx), (0,255,0),1)
 		cv2.line(res, (Xpx, Ypx-int(Ypx*3/2)), (Xpx, Ypx+int(Ypx*3/2)), (0,255,0),1)
 		
-		cv2.line(res, (p1x, p1y), (p2x, p2y), (0,0,255),3)
+		# cv2.line(res, (p1x, p1y), (p2x, p2y), (0,0,255),3)
 		
 		cv2.circle(res,(xc_Robot1ColorBack,yc_Robot1ColorBack), 3, (0,0,255), -1)
 		cv2.circle(res,(xc_Robot1ColorFront,yc_Robot1ColorFront), 3, (0,0,255), -1)
@@ -296,16 +313,16 @@ while(True):
 		cv2.circle(res,(p1x,p1y), 2, (0,0,255), -1)
 		cv2.circle(res,(p2x,p2y), 2, (0,0,255), -1)
 				
-		cv2.putText(res, "(" + str(xcr_Robot1ColorBack) + "," + str(ycr_Robot1ColorBack) + ")",(xc_Robot1ColorBack,yc_Robot1ColorBack), 5, 1, (255,255,255),1,8,False)
-		cv2.putText(res, "(" + str(xcr_Robot1ColorFront) + "," + str(ycr_Robot1ColorFront) + ")",(xc_Robot1ColorFront,yc_Robot1ColorFront), 5, 1, (255,255,255),1,8,False)
-		cv2.putText(res, "(" + str(xcr_BallColor) + "," + str(ycr_BallColor) + ")",(xc_BallColor,yc_BallColor), 5, 1, (255,255,255),1,8,False)
+		# cv2.putText(res, "(" + str(xcr_Robot1ColorBack) + "," + str(ycr_Robot1ColorBack) + ")",(xc_Robot1ColorBack,yc_Robot1ColorBack), 5, 1, (255,255,255),1,8,False)
+		# cv2.putText(res, "(" + str(xcr_Robot1ColorFront) + "," + str(ycr_Robot1ColorFront) + ")",(xc_Robot1ColorFront,yc_Robot1ColorFront), 5, 1, (255,255,255),1,8,False)
+		# cv2.putText(res, "(" + str(xcr_BallColor) + "," + str(ycr_BallColor) + ")",(xc_BallColor,yc_BallColor), 5, 1, (255,255,255),1,8,False)
 		
-		cv2.putText(res, "<" + str(theta) + " |" + str(dist),(xc_BallColor+30,yc_BallColor+30), 5, 1, (255,255,255),1,8,False)
-		cv2.putText(res, "P1(" + str(d1) + ")",(p1x,p1y), 5, 1, (0,255,0),1,8,False)
-		cv2.putText(res, "P2(" + str(d2) + ")",(p2x,p2y), 5, 1, (0,255,0),1,8,False)		
+		# cv2.putText(res, "<" + str(theta) + " |" + str(dist),(xc_BallColor+30,yc_BallColor+30), 5, 1, (255,255,255),1,8,False)
+		# cv2.putText(res, "P1(" + str(d1) + ")",(p1x,p1y), 5, 1, (0,255,0),1,8,False)
+		# cv2.putText(res, "P2(" + str(d2) + ")",(p2x,p2y), 5, 1, (0,255,0),1,8,False)		
 		
 		
-	#cv2.imshow('frame',frame)	
+	# cv2.imshow('frame',frame)	
 	cv2.imshow('res',res)
 	cv2.imshow('realidad', grupo1.game_field)
 
