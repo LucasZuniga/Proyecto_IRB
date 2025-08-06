@@ -15,11 +15,9 @@ Contiene los elementos físicos del sistema, divididos en dos partes:
 
 - **`mechanical/`**  
   Archivos CAD y STL para la impresión y construcción de los robots.  
-  *(Corresponde al antiguo módulo ICM).*
 
 - **`electrical/`**  
   Esquemáticos, planos y archivos de diseño de la PCB utilizada.  
-  *(Corresponde al antiguo módulo IEE).*
 
 ---
 
