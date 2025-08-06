@@ -1,0 +1,8 @@
+cv2
+math
+numpy
+_thread
+threading
+time
+simple_pid
+socket
