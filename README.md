@@ -1,25 +1,97 @@
 # Proyecto_IRB
 
-## Descripción
-Este repositorio documenta el trabajo realizado en el proyecto de un equipo de tres robots para competir en fútbol robótico autónomo. Incluye detalles sobre el diseño mecáico, componentes electrónicos, diseño de la placa, comunicación entre robots y avances del proyecto, sirviendo para evaluación y verificación por parte del profesor.
+## Descripción general
 
-Al traatrse de un proyecto interdisiplinario, este se compone de tres módulos principales, [ICM](https://github.com/LucasZuniga/Proyecto_IRB/tree/main/ICM), [IEE](https://github.com/LucasZuniga/Proyecto_IRB/tree/main/IEE) y [DCC](https://github.com/LucasZuniga/Proyecto_IRB/tree/main/DCC), haciendo referencia a las siglas de los departamentos de Ingeniería Mecánica, Electrica y Computacional respectivamente.
+Este repositorio documenta el trabajo realizado en un proyecto interdisciplinario de robótica, donde se desarrolló un sistema autónomo compuesto por un equipo de tres robots capaces de competir en fútbol robótico. El proyecto abarca diseño mecánico, desarrollo electrónico, construcción de placas, programación distribuida, visión por computadora y estrategias colaborativas.
 
-En adicion a los módulos antes mencionados, se encuntra la lista de componentes necesarios para la construcción de los robots, junto con actas de distintas reuniones para el avance del proyecto.
+El objetivo es crear un repositorio limpio, modular y reutilizable, facilitando su comprensión y extensión por parte de estudiantes, ayudantes o investigadores en el futuro.
 
-## ICM
-En este apartado se encuentran los distintos archivos STL para la impresión y construcción de cada uno de los robots.
+---
 
-## IEE
-Respecto al módulo electrico se encuntran el esquemático y plano utilizados en el diseño y construcción de la placa.
+## 📂 Estructura del Proyecto
 
-## DCC
-* Nuestro documento asume familiaridad con los lenguajes de programación Python y MicroPython, en caso contrario consultar la documentación oficial de cada lenguaje  [Documentación Python](https://docs.python.org/3/) y [Documentación MicroPython](https://docs.micropython.org/en/latest/index.html)
+### `/hardware/`
+Contiene los elementos físicos del sistema, divididos en dos partes:
 
-### Dependencias
-* Recomended code editor: [Visual Studio Code](https://code.visualstudio.com/download)
+- **`mechanical/`**  
+  Archivos CAD y STL para la impresión y construcción de los robots.  
+  *(Corresponde al antiguo módulo ICM).*
 
-### Sub-modulos
-* [jugador](https://github.com/LucasZuniga/Proyecto_IRB/tree/main/DCC/jugador): Este submódulo es donde se encuentra tanto el codigo principal como las librerias propias para el correcto funcionamiento de cada robot por separado.
-* [base](https://github.com/LucasZuniga/Proyecto_IRB/tree/main/DCC/base): En este submódulo se encuentra el codigo que levanta el servidor al cual se conectan los robots, el programa principal encargado visualizar la cancha meidante la camara y dirigir a cada uno de los robots de manera independiente junto con un simulador, el cual puede ser muy útil para el desarrollo de las jugadas.
-* [extras](https://github.com/LucasZuniga/Proyecto_IRB/tree/main/DCC/extras): En este submodulo se encuentran codigos útilles pero que no se terminan utilizando en las rutinas finales.
+- **`electrical/`**  
+  Esquemáticos, planos y archivos de diseño de la PCB utilizada.  
+  *(Corresponde al antiguo módulo IEE).*
+
+---
+
+### `/software/`
+Contiene todo el código necesario para ejecutar el sistema, dividido en los siguientes submódulos:
+
+- **`base/`**  
+  Código central que corre en el servidor (por ejemplo, en un PC):
+  - Visualización y procesamiento de imágenes de la cancha.
+  - Dirección de cada robot en tiempo real.
+  - Servidor de comunicaciones.
+  - Simulador básico para pruebas sin hardware físico.
+
+- **`player/`**  
+  Código que corre en cada robot individual, implementado en MicroPython. Contiene:
+  - Rutinas de control de motores y sensores.
+  - Comunicación con el servidor.
+  - Lógica local de toma de decisiones.
+
+- **`extras/`**  
+  Scripts adicionales, herramientas de depuración o prototipos que fueron útiles durante el desarrollo, pero que no forman parte del pipeline final.
+
+- **`requirements.txt`**  
+  Archivo con las dependencias necesarias para correr el sistema desde Python (instalación mediante `pip install -r requirements.txt`).
+
+---
+
+### `/docs/`
+Documentación adicional, como:
+
+- Manuales de uso
+- Diagramas explicativos
+- Actas de reuniones y decisiones técnicas (`/docs/actas`)
+
+---
+
+### `/scripts/`
+Scripts automatizados para facilitar tareas como:
+- Inicialización de entorno
+- Carga de firmware
+- Ejecutar simulaciones
+- Reiniciar procesos
+
+---
+
+## Dependencias
+
+- Lenguajes utilizados:
+  - Python 3.x
+  - MicroPython
+- Editor recomendado: [Visual Studio Code](https://code.visualstudio.com/download)
+- Se recomienda tener instalados:
+  - `opencv-python` (para visión)
+  - `pygame` o similar (si se usa simulador)
+  - `numpy`, `matplotlib`, etc.
+
+---
+
+## Documentación complementaria
+
+- [Documentación oficial de Python](https://docs.python.org/3/)
+- [Documentación oficial de MicroPython](https://docs.micropython.org/en/latest/index.html)
+
+---
+
+## Créditos
+
+Proyecto desarrollado por estudiantes de Ingeniería Mecánica, Ingeniería Eléctrica e Ingeniería en Ciencias de la Computación de la Pontificia Universidad Católica de Chile.  
+Agradecimientos a los profesores y ayudantes que brindaron apoyo técnico durante el proceso.
+
+---
+
+## Licencia
+
+Este proyecto se encuentra bajo la licencia MIT, salvo que se indique lo contrario en archivos específicos.
