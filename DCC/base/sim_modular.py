@@ -6,7 +6,7 @@ import _thread
 from simple_pid import PID
 from funciones import *
 
-field_path = 'DCC/base/field.jpg'
+field_path = 'base/field.jpg'
 
 class irb_sim:
     robot1 = Robot(np.array([0,0,0]))  # --> [x, y, thetha]
@@ -86,55 +86,28 @@ UpperColorError = np.array([10,35,35])
 # Evita divisiones por cero
 epcilon = 0.00001
 
-# Permite que solo un robot renga la pelota
-
-
 global grupo1
 grupo1 = irb_sim()
 
 # Backend
-def start(delay):
-    global pelota
+def start(delay, grupo1):
     global r1Ar
     global r1Al
-    STATE = "PELOTA"
+    global theta
+    global dist
     #r1Ar: PWM rueda derecha
     #r1Al: PWM rueda izquierda
     #dist: distancia robot-pelota
     #theta: angulo robot-pelota
 
-    pid_ang = PID(1, 0.1, 0.05, setpoint=0)
-    pid_ang.output_limits = (-250, 250)
-    pid_ang.sample_time = 0.2
-    delta_ang = 10
-    
-    pid_lin = PID(2, 0.5, 0.1, setpoint=20)
-    pid_lin.output_limits = (-250, 250)
-    pid_lin.sample_time = 0.2
-
-    # Juegue_1_rob(grupo1.robot1, dist, theta)
     while(True):
-		#Ciclo de programacion
-	    if STATE == "PELOTA":
-		    if abs(dist) < 30:
-			    r1Ar = 0
-			    r1Al = 0
-		    else:
-			    control_R = -pid_ang(theta)
-			    control_L = pid_ang(theta)
-
-				# Correccion linearl solo si el agulo es pequeño
-			    if abs(theta) < delta_ang:
-				    control_R -= pid_lin(dist)
-				    control_L -= pid_lin(dist)
-					
-					
-			    r1Ar = control_R
-			    r1Al = control_L
-
-		    print("Angulo: " + str(theta))
-		    print("Distancia: " + str(dist))
-		    time.sleep(0.2)
+        # Progrma logico
+        r1Ar, r1Al = Juegue_1_rob(grupo1.robot1, dist, theta)
+        
+        # Printeo de distancia y angulo para debuggeo
+        print("Angulo: " + str(theta))
+        print("Distancia: " + str(dist))
+        time.sleep(delay)
 	
 
 cv2.namedWindow('realidad', cv2.WINDOW_AUTOSIZE)
@@ -186,7 +159,7 @@ cv2.namedWindow('res',  cv2.WINDOW_AUTOSIZE )
 cv2.moveWindow('res', 700, 100)
 
 _thread.start_new_thread(sim_run, (1,))
-_thread.start_new_thread(  start, (1,))
+_thread.start_new_thread(  start, (0.2, grupo1))
 
 frame = grupo1.game_field
 frame = grupo1.game_field

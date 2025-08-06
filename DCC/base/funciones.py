@@ -13,7 +13,7 @@ class Pelota():
 class Robot():
     def __init__(self, array):
         self.pos = array
-        self.STATE = "PELOTA"
+        self.STATE = "IDLE"
         self.control_pelota = False
         self.rodillo = False
         self.rAr = 0
@@ -39,30 +39,29 @@ class Robot():
 
 
 def Juegue_1_rob(robot_1,dist, theta): 
-    while True:   
-        if robot_1.STATE == "IDLE":
-            robot_1.STATE = "PELOTA"
+    if robot_1.STATE == "IDLE":
+        print("Estado Cambiado a PELOTA")
+        robot_1.STATE = "PELOTA"
+        r1Ar, r1Al = 0, 0
+        
+    elif robot_1.STATE == "PELOTA":
+        if abs(dist) < 30:
+            r1Ar = 0
+            r1Al = 0
+        else:
+            control_R = -robot_1.pid_ang(theta)
+            control_L = robot_1.pid_ang(theta)
+
+            # Correccion linearl solo si el agulo es pequeño
+            if abs(theta) < robot_1.delta_ang:
+                control_R -= robot_1.pid_lin(dist)
+                control_L -= robot_1.pid_lin(dist)
+                
+                
+            r1Ar = control_R
+            r1Al = control_L
             
-        if robot_1.STATE == "PELOTA":
-            if abs(dist) < 30:
-                r1Ar = 0
-                r1Al = 0
-            else:
-                control_R = -robot_1.pid_ang(theta)
-                control_L = robot_1.pid_ang(theta)
-
-                # Correccion linearl solo si el agulo es pequeño
-                if abs(theta) < robot_1.delta_ang:
-                    control_R -= robot_1.pid_lin(dist)
-                    control_L -= robot_1.pid_lin(dist)
-                    
-                    
-                r1Ar = control_R
-                r1Al = control_L
-
-        print("Angulo: " + str(theta))
-        print("Distancia: " + str(dist))
-        time.sleep(0.2)
+    return r1Ar, r1Al
             
         
     
