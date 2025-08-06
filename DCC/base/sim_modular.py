@@ -9,25 +9,29 @@ from funciones import *
 field_path = 'DCC/base/field.jpg'
 
 class irb_sim:
-    robot1_pos = np.array([0,0,0])  # --> [x, y, thetha]
-    ball_pos = np.array([0,0,0])
+    robot1 = Robot(np.array([0,0,0]))  # --> [x, y, thetha]
+    ball = Pelota(np.array([0,0,0]))
     game_field = cv2.imread(field_path)
- 
-    def draw(self):
-        self.game_field = cv2.imread(field_path)
-        
+
+    def draw_robot(self, rob, color_front, color_back):
         # pos circulo frontal del robot
-        r1_fx = int(self.robot1_pos[0] + 30*math.cos(self.robot1_pos[2]))
-        r1_fy = int(self.robot1_pos[1] + 30*math.sin(self.robot1_pos[2]))
+        r1_fx = int(rob.pos[0] + 30*math.cos(rob.pos[2]))
+        r1_fy = int(rob.pos[1] + 30*math.sin(rob.pos[2]))
 		
         # pos circulo posterior del robot
-        r1_bx = int(self.robot1_pos[0] + 0*math.cos(self.robot1_pos[2]))
-        r1_by = int(self.robot1_pos[1] + 0*math.sin(self.robot1_pos[2]))
+        r1_bx = int(rob.pos[0] + 0*math.cos(rob.pos[2]))
+        r1_by = int(rob.pos[1] + 0*math.sin(rob.pos[2]))
 
         # dibujar 
-        cv2.circle(self.game_field,(r1_fx, r1_fy), 10, (0,0,255), -1)
-        cv2.circle(self.game_field,(r1_bx, r1_by), 10, (255,0,0), -1)
-        cv2.circle(self.game_field,(self.ball_pos[0],self.ball_pos[1]), 10, (0, 255, 255), -1)
+        cv2.circle(self.game_field,(r1_fx, r1_fy), 10, color_front, -1)
+        cv2.circle(self.game_field,(r1_bx, r1_by), 10, color_back, -1)
+    
+    def draw(self):
+        self.game_field = cv2.imread(field_path)
+        cv2.circle(self.game_field,(self.ball.pos[0],self.ball.pos[1]), 10, (0, 255, 255), -1)
+        
+        self.draw_robot(self.robot1,(0,0,255), (255,0,0))
+        
 
 global frame
 global nClick
@@ -108,7 +112,7 @@ def start(delay):
     pid_lin.output_limits = (-250, 250)
     pid_lin.sample_time = 0.2
 
-
+    # Juegue_1_rob(grupo1.robot1, dist, theta)
     while(True):
 		#Ciclo de programacion
 	    if STATE == "PELOTA":
@@ -147,8 +151,8 @@ def sim_run(delay):
 	rby = 350
 	
 	
-	grupo1.robot1_pos = np.array([r1x,r1y,r1a])
-	grupo1.ball_pos = np.array([rbx,rby,0])
+	grupo1.robot1.pos = np.array([r1x,r1y,r1a])
+	grupo1.ball.pos = np.array([rbx,rby,0])
 	grupo1.draw()
 	t = 0
 	t_step = 0.027
@@ -172,7 +176,7 @@ def sim_run(delay):
 		r1y = r1y + r1y_p*t_step
 		r1a = r1a + r1a_p*t_step
 		
-		grupo1.robot1_pos = np.array([r1x,r1y,r1a])
+		grupo1.robot1.pos = np.array([r1x,r1y,r1a])
 		grupo1.draw()
 			
 		
