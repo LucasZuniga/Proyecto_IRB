@@ -8,7 +8,7 @@ El objetivo es crear un repositorio limpio, modular y reutilizable, facilitando 
 
 ---
 
-## 📂 Estructura del Proyecto
+## Estructura del Proyecto
 
 ### `/hardware/`
 Contiene los elementos físicos del sistema, divididos en dos partes:
@@ -73,7 +73,7 @@ Scripts automatizados para facilitar tareas como:
 - Editor recomendado: [Visual Studio Code](https://code.visualstudio.com/download)
 - Se recomienda tener instalados:
   - `opencv-python` (para visión)
-  - `pygame` o similar (si se usa simulador)
+  - `simple_pid` (para el control de lazo cerrado)
   - `numpy`, `matplotlib`, etc.
 
 ---
@@ -87,7 +87,7 @@ Scripts automatizados para facilitar tareas como:
 
 ## Créditos
 
-Proyecto desarrollado por estudiantes de Ingeniería Mecánica, Ingeniería Eléctrica e Ingeniería en Ciencias de la Computación de la Pontificia Universidad Católica de Chile.  
+Proyecto desarrollado por estudiantes del Major de Robótica de la Pontificia Universidad Católica de Chile.  
 Agradecimientos a los profesores y ayudantes que brindaron apoyo técnico durante el proceso.
 
 ---
