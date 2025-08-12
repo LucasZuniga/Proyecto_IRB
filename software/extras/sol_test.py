@@ -48,8 +48,9 @@ led.off()
 
 # Solenoide
 sol = Pin(15, Pin.OUT)
+solenoide = 0
 
 while True:
-    solenoide = int(input("1 encender o 0 apagar"))
-    # sol.value(solenoide)
-    led.value(0)
+    solenoide = int(input("1 encender o 0 apagar: "))
+    sol.value(solenoide)
+    led.value(solenoide)
