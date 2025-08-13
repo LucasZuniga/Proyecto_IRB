@@ -93,28 +93,28 @@ async def iniciar_cliente(ip, puerto, nombre_cliente, wlan, led_cliente):
             while True:
                 try:
                     mensaje = server_socket.recv(1024).decode('utf-8')
-                    
-                    if encendido:
-                        if mensaje == "OFF":
-                            encendido = False
+                    if mensaje:
+                        if encendido:
+                            if mensaje == "OFF":
+                                encendido = False
+                                
+                            elif mensaje == "SOL":
+                                sol.value(1)
+                                led_amarillo.on()
+                                await uasyncio.sleep_ms(100)
+                                sol.value(0)
+                                led_amarillo.off()
                             
-                        elif mensaje == "SOL":
-                            sol.value(1)
-                            led_amarillo.on()
-                            await uasyncio.sleep_ms(100)
-                            sol.value(0)
-                            led_amarillo.off()
-                        
-                        
-                        elif mensaje:
-                            print(mensaje)
-                            vel_rec_1, vel_rec_2 = mensaje.split(",")
-                            vel_ref_1, vel_ref_2 = int(vel_rec_1), int(vel_rec_2)
-                            print(f"vel 1 r: {vel_ref_1} RPM, vel 1 r: {vel_ref_2} RPM")
                             
-                    else:
-                        if mensaje == "ON":
-                            encendido = True
+                            else:
+                                print(mensaje)
+                                vel_rec_1, vel_rec_2 = mensaje.split(",")
+                                vel_ref_1, vel_ref_2 = int(vel_rec_1), int(vel_rec_2)
+                                print(f"vel 1 r: {vel_ref_1} RPM, vel 1 r: {vel_ref_2} RPM")
+                                
+                        else:
+                            if mensaje == "ON":
+                                encendido = True
                         
                         
                 except KeyboardInterrupt:
