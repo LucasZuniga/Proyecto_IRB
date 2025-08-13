@@ -55,12 +55,6 @@ d2_pwmb = PWM(Pin(14))
 # Solenoide
 sol = Pin(15, Pin.OUT)
 
-d1_pwma.freq(1000)      ### Averiguar sobre esta linea ###
-d1_stby.value(1)        # Enable the motor driver 1
-d2_pwma.freq(1000)
-d2_stby.value(1)        # Enable the motor driver 2
-
-
 ##### Parametros Iniciales #####
 
 d1_pwma.freq(1000)      ### Averiguar sobre esta linea ###
@@ -69,16 +63,18 @@ d2_pwma.freq(1000)
 d2_stby.value(1)        # Enable the motor driver 2
 
 # velocidades de referencia iniciales
-vel_ref_1 = 10
-vel_ref_2 = 10
+vel_ref_1 = 0
+vel_ref_2 = 0
 
 #---------------------------------------------------------------------------
 ##### Server Conection #####
 
 # Funcion encargada de crear instancia de cliente y conectarse al servidor
 async def iniciar_cliente(ip, puerto, nombre_cliente, wlan, led_cliente):
+    encendido = False
     global vel_ref_1
-    global vel_ref_2    
+    global vel_ref_2   
+    global sol 
     
     while True:
         if wlan.isconnected():
@@ -92,14 +88,35 @@ async def iniciar_cliente(ip, puerto, nombre_cliente, wlan, led_cliente):
             server_socket.send(nombre_cliente.encode('utf-8'))
             print("Identificacion enviada")
             
+            
+            # Funcion que permite controlar el robot desde el servidor
             while True:
                 try:
                     mensaje = server_socket.recv(1024).decode('utf-8')
-                    if mensaje:
-                        print(mensaje)
-                        vel_rec_1, vel_rec_2 = mensaje.split(",")
-                        vel_ref_1, vel_ref_2 = int(vel_rec_1), int(vel_rec_2)
-                        print(f"vel 1 r: {vel_ref_1} RPM, vel 1 r: {vel_ref_2} RPM")
+                    
+                    if encendido:
+                        if mensaje == "OFF":
+                            encendido = False
+                            
+                        elif mensaje == "SOL":
+                            sol.value(1)
+                            led_amarillo.on()
+                            await uasyncio.sleep_ms(100)
+                            sol.value(0)
+                            led_amarillo.off()
+                        
+                        
+                        elif mensaje:
+                            print(mensaje)
+                            vel_rec_1, vel_rec_2 = mensaje.split(",")
+                            vel_ref_1, vel_ref_2 = int(vel_rec_1), int(vel_rec_2)
+                            print(f"vel 1 r: {vel_ref_1} RPM, vel 1 r: {vel_ref_2} RPM")
+                            
+                    else:
+                        if mensaje == "ON":
+                            encendido = True
+                        
+                        
                 except KeyboardInterrupt:
                     print("Server connection close")
                     led_cliente.off()
