@@ -71,7 +71,6 @@ vel_ref_2 = 0
 
 # Funcion encargada de crear instancia de cliente y conectarse al servidor
 async def iniciar_cliente(ip, puerto, nombre_cliente, wlan, led_cliente):
-    encendido = False
     global vel_ref_1
     global vel_ref_2   
     global sol 
@@ -94,28 +93,15 @@ async def iniciar_cliente(ip, puerto, nombre_cliente, wlan, led_cliente):
                 try:
                     mensaje = server_socket.recv(1024).decode('utf-8')
                     if mensaje:
-                        if encendido:
-                            if mensaje == "OFF":
-                                encendido = False
-                                
-                            elif mensaje == "SOL":
-                                sol.value(1)
-                                led_amarillo.on()
-                                await uasyncio.sleep_ms(100)
-                                sol.value(0)
-                                led_amarillo.off()
-                            
-                            
-                            else:
-                                print(mensaje)
-                                vel_rec_1, vel_rec_2 = mensaje.split(",")
-                                vel_ref_1, vel_ref_2 = int(vel_rec_1), int(vel_rec_2)
-                                print(f"vel 1 r: {vel_ref_1} RPM, vel 1 r: {vel_ref_2} RPM")
-                                
+                        print(mensaje)
+                        vel_rec_1, vel_rec_2, solenoide, rodillo = mensaje.split(",")
+                        vel_ref_1, vel_ref_2 = int(vel_rec_1), int(vel_rec_2)
+                        sol.value(solenoide)
+                        if rodillo:
+                            RotateCW(30, d2_inb1, d2_inb2, d2_pwmb)
                         else:
-                            if mensaje == "ON":
-                                encendido = True
-                        
+                            StopMotor(d2_inb1, d2_inb2, d2_pwmb)
+                        print(f"vel 1 r: {vel_ref_1} RPM, vel 1 r: {vel_ref_2} RPM")
                         
                 except KeyboardInterrupt:
                     print("Server connection close")

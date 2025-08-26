@@ -1,6 +1,8 @@
 import socket
 import threading
 import time
+import keyboard
+
 
 clientes = []
 vels_1 = 0
@@ -66,6 +68,44 @@ def actualizar_vel():
         print("")
         vels_1 = input("Idique las velocidades en rpm separadas por una coma ")
         # serv_vel_1_r, serv_vel_1_l = vels.split(",")
+        
+def actualizar_vel_keyboard():
+    global vels_1
+    rodillo = False
+    while True:
+        vel_r = 0
+        vel_l = 0
+        sol = 0
+        if keyboard.is_pressed("w"):
+            vel_r, vel_l = 30, 30
+            # print("alante")
+        
+        elif keyboard.is_pressed("s"):
+            vel_r, vel_l = -30, -30
+            # print("atras")
+        
+        elif keyboard.is_pressed("a"):
+            vel_r, vel_l = 30, -30
+            # print("izq")
+        
+        elif keyboard.is_pressed("d"):
+            vel_r, vel_l = -30, 30
+            # print("derch")
+            
+        elif keyboard.is_pressed("SPACE"):
+            sol = 1
+            # print("sol")
+            
+        elif keyboard.is_pressed("r"):
+            rodillo = not rodillo
+
+        elif keyboard.is_pressed("e"):
+            break
+        
+        vels_1 = str(vel_r) + ", " + str(vel_l) + ", " + str(sol) + ", " + str(int(rodillo))
+        print(vels_1)
+        
+        time.sleep(0.1)
 
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
@@ -73,7 +113,7 @@ def actualizar_vel():
 if __name__ == "__main__":
     
     # Inicializa el Thread en el que se calculan las velocidades necesarias
-    vel_thread = threading.Thread(target=actualizar_vel)
+    vel_thread = threading.Thread(target=actualizar_vel_keyboard)
     vel_thread.start()
     
     # Un segundo Thread (principal), se encarga de levantar el servidor y enviar las velocidades a los robots

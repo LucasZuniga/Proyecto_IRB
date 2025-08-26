@@ -64,8 +64,8 @@ def stop(d1_ina1, d1_ina2, d1_pwma, d2_ina1, d2_ina2, d2_pwma):
 #     d2_inb2.value(0)
 #     d2_pwmb.duty_u16(0)
 
-def solenoid(sol, pos):
-    sol.value(pos)
+# def solenoid(sol, pos):
+#     sol.value(pos)
 
 # def solenoid_off(sol):
 #     sol.value(0)
