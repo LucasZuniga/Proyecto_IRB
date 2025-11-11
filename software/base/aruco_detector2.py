@@ -4,6 +4,7 @@
 from enum import Enum
 import cv2
 import numpy as np 
+import math
 import os 
 import matplotlib.pyplot as plt 
 
@@ -29,23 +30,55 @@ class ArucoType(Enum):
     DICT_APRILTAG_25h9 = cv2.aruco.DICT_APRILTAG_25h9
     DICT_APRILTAG_36h10 = cv2.aruco.DICT_APRILTAG_36h10
     DICT_APRILTAG_36h11 = cv2.aruco.DICT_APRILTAG_36h11
+    
+class ArUco_Marker():
+    def __init__(self, corners, id):
+        self.id = id
+        self.corners = corners
+        self.tl = corners[0][0]
+        self.tr = corners[0][1]
+        self.bl = corners[0][2]
+        self.br = corners[0][3]
+        
+        self.get_centre()
+        self.get_angle()
+        
+    def get_centre(self):
+        top_centre_x = int((self.tl[0] + self.tr[0])/2)
+        top_centre_y = int((self.tl[1] + self.tr[1])/2)
+        self.top_centre = (top_centre_x, top_centre_y)
+        
+        bot_centre_x = int((self.bl[0] + self.br[0])/2)
+        bot_centre_y = int((self.bl[1] + self.br[1])/2)
+        self.bot_centre = (bot_centre_x, bot_centre_y)
+        
+        self.rigth_centre = (int((self.tr[0] + self.br[0])/2), int((self.tr[1] + self.br[1])/2))
+        
+        self.centre = (int((top_centre_x + bot_centre_x)/2), int((top_centre_y + bot_centre_y)/2))
+        
+    def get_angle(self):
+        dx = self.top_centre[0] - self.centre[0]
+        dy = self.top_centre[1] - self.centre[1]
 
-class ArucoMarkers(): 
-    def __init__(self): 
-        self.dir = os.path.dirname(os.path.abspath(__file__))
+        theta_rad = round((math.atan2(dy, dx)/2), 3)
+        theta_deg = int((theta_rad/math.pi)*360)
 
+        self.angle = theta_deg
+        
+    def draw_marker(self, frame):
+        cv2.line(frame, self.centre, self.top_centre, (255, 0, 0), 2)
+        cv2.putText(frame, f"ID: {self.id}, {self.angle} deg", (int(self.tl[0]), int(self.tl[1]) - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2, )
+        
+class ArUco_Detector():
+    def __init__(self):
+        pass
+    
     def aruco_marker_pose_estimation(self,aruco_type,camera_matrix,dist_coeffs): 
         print('Detecting ArUco Marker...')
         cap = cv2.VideoCapture(0)
         aruco_dict = cv2.aruco.Dictionary_get(aruco_type.value)
         aruco_params = cv2.aruco.DetectorParameters_create()
-        # detector = cv2.aruco.ArucoDetector(aruco_dict,aruco_params)
-
-        world_points = np.array([[0.,0.,0.], # top left
-                                 [1.,0.,0.], # top right
-                                 [1.,1.,0.], # bottom right
-                                 [0.,1.,0.]  # bottom left
-        ])
+        
         while True: 
             ret, frame = cap.read() 
         
@@ -54,29 +87,64 @@ class ArucoMarkers():
 
             frame_gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
             corners, ids, _ = cv2.aruco.detectMarkers(frame_gray, aruco_dict, parameters= aruco_params)
-
-            if ids is not None: 
-                frame = cv2.aruco.drawDetectedMarkers(frame,corners,ids)
-
-                for corner in corners: 
-                    _,rvecs,tvecs = cv2.solvePnP(world_points,corner,camera_matrix,dist_coeffs)
-                    rotation_matrix, _ = cv2.Rodrigues(rvecs)
-                    flip_matrix = np.array([
-                                    [0, 1, 0],
-                                    [1, 0, 0],
-                                    [0, 0, -1]
-                                  ], dtype=np.float32)
-                    transformed_rotation_matrix = rotation_matrix @ flip_matrix
-                    rvecs_transformed, _ = cv2.Rodrigues(transformed_rotation_matrix)
-
-                    cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvecs_transformed, tvecs, 1)  
-
+            
+            if ids is not None:
+                for i in range(len(ids)):
+                    new_marker = ArUco_Marker(corners[i], ids[i])
+                    new_marker.draw_marker(frame)
+                    
             cv2.imshow('ArUco Detection',frame)
             if cv2.waitKey(1) & 0xFF == ord('q'): 
                 break
 
+# class ArucoMarkers(): 
+#     def __init__(self): 
+#         self.dir = os.path.dirname(os.path.abspath(__file__))
+
+#     def aruco_marker_pose_estimation(self,aruco_type,camera_matrix,dist_coeffs): 
+#         print('Detecting ArUco Marker...')
+#         cap = cv2.VideoCapture(0)
+#         aruco_dict = cv2.aruco.Dictionary_get(aruco_type.value)
+#         aruco_params = cv2.aruco.DetectorParameters_create()
+
+#         world_points = np.array([[0.,0.,0.], # top left
+#                                  [1.,0.,0.], # top right
+#                                  [1.,1.,0.], # bottom right
+#                                  [0.,1.,0.]  # bottom left
+#         ])
+#         while True: 
+#             ret, frame = cap.read() 
+        
+#             if not ret: 
+#                 break 
+
+#             frame_gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+#             corners, ids, _ = cv2.aruco.detectMarkers(frame_gray, aruco_dict, parameters= aruco_params)
+
+#             if ids is not None: 
+                
+#                 cv2.aruco.drawDetectedMarkers(frame, corners, ids)
+
+#                 for corner in corners: 
+#                     _,rvecs,tvecs = cv2.solvePnP(world_points,corner,camera_matrix,dist_coeffs)
+#                     rotation_matrix, _ = cv2.Rodrigues(rvecs)
+#                     flip_matrix = np.array([
+#                                     [0, 1, 0],
+#                                     [1, 0, 0],
+#                                     [0, 0, -1]
+#                                   ], dtype=np.float32)
+#                     transformed_rotation_matrix = rotation_matrix @ flip_matrix
+#                     rvecs_transformed, _ = cv2.Rodrigues(transformed_rotation_matrix)
+                    
+#                     cv2.drawFrameAxes(frame, camera_matrix, dist_coeffs, rvecs_transformed, tvecs, 1)  
+#                     cv2.circle(frame, (int(corner[0][0][0]), int(corner[0][0][1])), 4, (255, 0, 0), -1)
+
+#             cv2.imshow('ArUco Detection',frame)
+#             if cv2.waitKey(1) & 0xFF == ord('q'): 
+#                 break
+
 def run_aruco_marker_pose_estimation(aruco_type): 
-    aruco_marker = ArucoMarkers() 
+    aruco_marker = ArUco_Detector() 
     # Logitech Camera Calibration (Need to calibrate for your own camera)
     camera_matrix = np.array([
         [1432.0, 0.0,    983.0], 
