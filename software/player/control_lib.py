@@ -33,15 +33,15 @@ def forward(duty_1, d1_ina1, d1_ina2, d1_pwma, duty_2, d2_ina1, d2_ina2, d2_pwma
     RotateCW(duty_2, d2_ina1, d2_ina2, d2_pwma)
     
 def move(duty_1, d1_ina1, d1_ina2, d1_pwma, duty_2, d2_ina1, d2_ina2, d2_pwma):
-    if duty_1 >= 0:
+    if duty_1 >= 0: #Lado pin mas salido
         RotateCCW(duty_1, d1_ina1, d1_ina2, d1_pwma)
     else:
         RotateCW(-duty_1, d1_ina1, d1_ina2, d1_pwma)
         
-    if duty_2 >= 0:
-        RotateCW(duty_2, d2_ina1, d2_ina2, d2_pwma)
+    if duty_2 >= 0: # Lado pin menos salido
+        RotateCCW(duty_2, d2_ina1, d2_ina2, d2_pwma)
     else:
-        RotateCCW(-duty_2, d2_ina1, d2_ina2, d2_pwma)
+        RotateCW(-duty_2, d2_ina1, d2_ina2, d2_pwma)
                 
 def stop(d1_ina1, d1_ina2, d1_pwma, d2_ina1, d2_ina2, d2_pwma):
     StopMotor(d1_ina1, d1_ina2, d1_pwma)

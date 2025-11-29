@@ -11,7 +11,7 @@ from time import sleep, sleep_ms, ticks_us, time_ns
 
 # Librerias Propias #
 # from cliente import iniciar_cliente
-from control_lib import *
+from control_lib import flanco_bajada, flanco_subida, StopMotor, RotateCCW, RotateCW, move, C_PID
 from WiFi import connect, check_wifi
 
 
@@ -155,7 +155,7 @@ def close_loop():
         m1_enc1_val = m1_enc1.value()
         m2_enc1_val = m2_enc1.value()
         
-        # Pulse Counter Motor 1
+        # Pulse Counter Motor 1 (izq)
         if flanco_subida(m1_enc1_val, m1_enc1_prev):
             if m1_enc2.value():
                 count_pulses_1 += 1
@@ -169,18 +169,18 @@ def close_loop():
                 count_pulses_1 += 1
          
                
-        # Pulse Counter Motor 2
+        # Pulse Counter Motor 2 (Der)
         if flanco_subida(m2_enc1_val, m2_enc1_prev):
             if m2_enc2.value():
-                count_pulses_2 -= 1
-            else:
                 count_pulses_2 += 1
+            else:
+                count_pulses_2 -= 1
                             
         if flanco_bajada(m2_enc1_val, m2_enc1_prev):
             if m2_enc2.value():
-                count_pulses_2 += 1
-            else:
                 count_pulses_2 -= 1
+            else:
+                count_pulses_2 += 1
         
         
         if calc_vel % 500 == 0:            
@@ -233,7 +233,7 @@ ssid = 'Lucas'
 password = '1234567890'
 wlan = network.WLAN(network.STA_IF)
 # Servidor
-ip_server = '10.169.50.53'
+ip_server = '10.186.5.53'
 port = 8080
 robot_id = "FutBot_1"
 

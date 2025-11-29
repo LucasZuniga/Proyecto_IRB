@@ -50,7 +50,7 @@ def enviar_vel():
 def enviar_a_todos(mensaje):
     for cliente in clientes:
         try:
-            cliente[0].send(mensaje.encode('utf-8'))
+            cliente[0].send(mensaje.encode('utf-8'))   
         except:
             # Si no se puede enviar el mensaje (cliente desconectado), eliminarlo
             clientes.remove(cliente)
@@ -77,19 +77,19 @@ def actualizar_vel_keyboard():
         vel_l = 0
         sol = 0
         if keyboard.is_pressed("w"):
-            vel_r, vel_l = 30, 30
+            vel_r, vel_l = 50, 50
             # print("alante")
         
         elif keyboard.is_pressed("s"):
-            vel_r, vel_l = -30, -30
+            vel_r, vel_l = -50, -50
             # print("atras")
         
         elif keyboard.is_pressed("a"):
-            vel_r, vel_l = 30, -30
+            vel_r, vel_l = -50, 50
             # print("izq")
         
         elif keyboard.is_pressed("d"):
-            vel_r, vel_l = -30, 30
+            vel_r, vel_l = 50, -50
             # print("derch")
             
         elif keyboard.is_pressed("SPACE"):
@@ -105,7 +105,7 @@ def actualizar_vel_keyboard():
         vels_1 = str(vel_r) + ", " + str(vel_l) + ", " + str(sol) + ", " + str(int(rodillo))
         print(vels_1)
         
-        time.sleep(0.1)
+        time.sleep(0.15)
 
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------
