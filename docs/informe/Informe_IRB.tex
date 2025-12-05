@@ -1,0 +1,124 @@
+\documentclass[spanish,journal]{IEEEtran}
+\usepackage{amsmath,amsfonts}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{url}
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\begin{document}
+
+\title{Diseño y Desarrollo de Robots Educativos para Introducción a la Robótica mediante Fútbol de Robots}
+
+\author{Allende, S., Lorca, S., Reyes, B., Román, C., Zúñiga, L.}
+
+\maketitle
+
+
+\begin{abstract}
+    Este trabajo presenta el diseño y desarrollo de robots educativos enfocados en la enseñanza introductoria de robótica, utilizando el fútbol como plataforma experimental. El proyecto abarca desde la definición de las dimensiones físicas del robot hasta la implementación del circuito de control, la estructura mecánica y la programación inicial. Se propone un diseño compacto (10x10 cm) con tres motores de corriente continua para movimiento y un solenoide para el disparo del balón. Como innovación, se incorpora un rodillo de control de balón que mejora significativamente la precisión y maniobrabilidad en comparación con la antigua pinza utilizada en versiones previas.
+\end{abstract}
+
+
+%\begin{IEEEkeywords}
+%Robótica educativa, fútbol de robots, diseño mecatrónico, control de %motores, aprendizaje activo.
+%\end{IEEEkeywords}
+
+\section{Introducción}
+\IEEEPARstart{E}{l} presente trabajo tiene como objetivo desarrollar una plataforma educativa que facilite la introducción a la robótica mediante robots futbolistas. La robótica aplicada al juego ofrece un entorno motivante y desafiante que permite a los estudiantes explorar conceptos de mecánica, electrónica y programación.
+
+\subsection{Objetivos del proyecto}
+\begin{itemize}
+    \item Diseñar un robot funcional dentro de un área de 10x10 cm.
+    \item Desarrollar un sistema de control capaz de manipular un balón con precisión mediante un rodillo.
+    \item Implementar una estructura robusta y ligera para facilitar el movimiento.
+    \item Introducir conceptos de control, sensado, comunicación y visión computacional en un entorno educativo.
+\end{itemize}
+
+\section{Análisis Inicial y Restricciones de Diseño}
+Antes de iniciar el desarrollo, se evaluaron las dimensiones del laboratorio y las limitaciones de los materiales disponibles. Se determinó que una base de 10x10 cm ofrecía un equilibrio adecuado entre estabilidad, maniobrabilidad y espacio para componentes electrónicos.
+
+\subsection{Requerimientos de diseño}
+\begin{itemize}
+    \item Tamaño máximo: 10x10 cm.
+    \item Peso objetivo: [COMPLETAR].
+    \item Componentes principales: 3 motores DC, 1 solenoide, 1 rodillo de control de balón.
+    \item Fuente de energía: [COMPLETAR].
+\end{itemize}
+
+\section{Diseño Mecánico}
+El diseño mecánico busca un equilibrio entre simplicidad, resistencia y precisión en el control del balón.
+
+\subsection{Estructura y materiales}
+El chasis se fabrica en material liviano (por ejemplo, acrílico o PLA impreso en 3D), con soporte modular para motores, rodillo y electrónica. La disposición de componentes se optimiza para mantener el centro de masa bajo y facilitar el mantenimiento.
+
+\subsection{Sistema de locomoción}
+
+El robot consta de dos ruedas motorizadas, junto de un apoyo tipo bola, el cual le entrega un tercer punto de paoyo sin interferir en el movimeinto. Las ruedas motorizadas se encuentran en la parte delantera del robot, una a cada lado. Los motores utilizados son motores DC N20 con una caja reductora de 1:100.
+Esta disposición permite al robot movimientos lineles, junto con giros sobre su eje al aplicar un control diferencial.
+
+\subsection{Sistema de control de balón}
+Se reemplaza la antigua pinza mecánica por un rodillo frontal que permite atrapar y retener el balón de manera más precisa. Esta mejora facilita el control dinámico del balón durante el desplazamiento, aumentando la capacidad de maniobra y estabilidad del sistema.
+
+\subsection{Mecanismo de disparo}
+El disparo del balón se realiza mediante un solenoide lineal que proporciona una fuerza de impacto controlada. El diseño incluye amortiguación para proteger los componentes electrónicos y prolongar la vida útil del actuador.
+
+\section{Diseño Electrónico}
+El sistema electrónico está basado en un microcontrolador Raspberry Pi Pico 2, elegido por su bajo costo, capacidad de procesamiento dual-core y facilidad de programación.
+
+\subsection{Componentes electrónicos}
+\begin{itemize}
+    \item Microcontrolador: Raspberry Pi Pico 2 W.
+    \item Controlador de motores: TB6612FNG Dual Motor Driver.
+    \item TIP102
+    \item Sensores (opcional): cámara, sensores de línea o distancia.
+\end{itemize}
+
+\subsection{Circuito propuesto}
+\begin{figure}[!t]
+    \centering
+    %\includegraphics[width=\linewidth]{[COMPLETAR]}
+    \caption{Diseño del circuito de control y potencia del robot.}
+    \label{fig_circuito}
+\end{figure}
+
+\section{Desarrollo de Software}
+El software se estructura en tres módulos principales: control, redes/comunicación y percepción.
+La arquitectura interna del microcontrolador aprovecha los dos núcleos del Raspberry Pi Pico 2, dedicando un núcleo exclusivamente a comunicación y otro a control del robot, optimizando así la respuesta en tiempo real.
+
+\subsection{Control}
+Para el control del robot se utilizará un PID de lazo cerrado, el cual leerá las rotaciones de las ruedas por medio de los \textit{encoders} magnéticos ubicados en la parte trasera de los motores.
+
+\subsection{Redes y Comunicación}
+La comunicación se basa en una arquitectura cliente-servidor, donde cada robot actúa como cliente y un servidor central coordina las acciones globales.
+Se utiliza comunicación inalámbrica mediante WiFi bajo el protocolo UDP, elegido por su baja latencia y capacidad de escalar a múltiples robots sin pérdida significativa de rendimiento.
+El segundo núcleo del microcontrolador se dedica a la recepción y envío de paquetes UDP, asegurando una comunicación robusta y paralela al control.
+
+\subsection{Percepción (Visión por Computador)}
+En esta etapa, se prevé integrar un sistema de percepción visual basado en cámara o sensores ópticos. Este sistema permitirá detectar el balón y la orientación del robot, proporcionando retroalimentación para el control autónomo futuro.
+
+\section{Resultados y Evaluación}
+Se realizaron pruebas iniciales de desplazamiento, control de balón mediante el rodillo y disparo. Los resultados mostraron una mejora significativa en la precisión de conducción y capacidad de respuesta del sistema.
+
+\subsection{Pruebas realizadas}
+[COMPLETAR]
+
+\subsection{Limitaciones observadas}
+[COMPLETAR]
+
+\section{Conclusiones y Trabajo Futuro}
+El diseño presentado demuestra que es posible construir una plataforma educativa robusta, modular y escalable. La sustitución de la pinza por un rodillo mejoró considerablemente la manipulación del balón.
+Como trabajo futuro, se planea incorporar algoritmos de visión artificial, control autónomo y estrategias cooperativas entre múltiples robots.
+
+\section*{Agradecimientos}
+Se agradece a [COMPLETAR] por facilitar el espacio y los materiales para el desarrollo del proyecto.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
+
+Tener la parte mecánica lista y con un rodillo
+Tener PCB armada y probada.
+Funcionar con software.
+

@@ -1,0 +1,59 @@
+# LaTeX: ignore auxiliary files and build output
+
+# build directories
+build/
+out/
+_build/
+*/build/
+
+# latexmk files
+*.fdb_latexmk
+*.fls
+*.auxlock
+
+# common aux files
+*.aux
+*.log
+*.toc
+*.lot
+*.lof
+*.out
+*.bbl
+*.blg
+*.run.xml
+*.synctex.gz
+*.pdfsync
+*.xdv
+*.dvi
+*.ps
+
+# index / glossary / nomenclature
+*.idx
+*.ilg
+*.ind
+*.glo
+*.gls
+*.glg
+*.ist
+*.acn
+*.acr
+*.alg
+
+# presentation / beamer
+*.nav
+*.snm
+*.vrb
+
+# minted cache
+_minted-*/
+
+# editor/OS temp files
+*~
+.#*
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Specific pdf files (uncomment if needed)
+*/informe/*.pdf
