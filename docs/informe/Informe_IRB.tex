@@ -315,11 +315,16 @@ El segundo simulador está orientado específicamente a la evaluación de compor
 [COMPLETAR]
 
 \subsection{Limitaciones observadas}
-[COMPLETAR]
+Luego de realizar las purebas, se encontraron ciertas limitaciónes de la versión actual del robot. La primera de estas tiene que ver con el material utilizado para las partes del robot que deben contar con un alto grado de adherencia, es decir, los neumaricos de las ruedas y los conos del rodillo que hacen contacto con la pelota, para estas partes se utilizaron impresion hechas en TPU, pero este material no entregó la fricción necesaria para su objetivo.
+
+Una segunda limitación de la actual verisón del robot, tiene que ver con el costo del mismo, ya que uno de los prpincipales objetivos era el mantener un bajo costo del robot y la batería está costando aproximadamente 100 USD (sin mencionar el cargador que se debe contar para recargarla), esto se traduce en que el costo de la batría es un 80\% del costo total del robot
 
 \section{Conclusiones y Trabajo Futuro}
-El diseño presentado demuestra que es posible construir una plataforma educativa robusta, modular y escalable. La sustitución de la pinza por un rodillo mejoró considerablemente la manipulación del balón.
-Como trabajo futuro, se planea incorporar algoritmos de visión artificial, control autónomo y estrategias cooperativas entre múltiples robots.
+El diseño presentado demuestra que es posible construir una plataforma educativa robusta, modular y escalable. La sustitución de la pinza por un rodillo mejoró considerablemente la manipulación del balón, permitiendo movimientos más complejos.
+Como fututro trabajo se tiene el arreglar las actuales limitaciónes de robot, es decir el sustituir el material utilizado para las piezas de alta fricción, además de cambiar la bateria utilziada para el robot.
+Para estas sustituciones, se tiene como primera opción el utilizar piezas de silicona fabricadas en moldes imptesos en 3D, para la sustitución del TPU, y para la batería se tiene como primera opción la evaluación de la sustitución pro baterias para taladros de 12V de Ni-MH, reduciendo el costo de las baterias junto con aumentar la seguridad de estas.
+En adición al arreglo de las actuales falencias de la primera versión del robot, se tiene como mejoras para incorporar a la segunda versión del robot un sistem ade luces led, que permita a los alumnos el tener un indicador visual de lo que está sucediendo (muy útil para debuggear y saber el estado actual del robot), siendo una de estas un indicador de bajo nivel de bateria.
+Además, se le puede incorporar un set de detectores de color, utilizados en robots sefuidores de linea, con el objetivo de que los alumnos puedan utilizar estos robots para más de una aplicación, aumentando el tiempo de interacción con el robot y evitando gastar tiempo en calibrar los parámetros de los PIDs para un segundo robot.
 
 \section*{Disponibilidad de Material}
 Todo el material relacionado con este proyecto, incluyendo diseños mecánicos (archivos CAD), esquemáticos electrónicos (PCB y circuitos), código fuente del software (MicroPython/C) y documentación técnica, se encuentra disponible de forma abierta en el repositorio GitHub del proyecto: \url{https://github.com/LucasZuniga/Proyecto_IRB}
