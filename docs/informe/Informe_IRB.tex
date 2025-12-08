@@ -8,6 +8,10 @@
 \usepackage[T1]{fontenc}
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, calc}
+
+\usepackage{fontspec}
+\setmonofont{DejaVu Sans Mono}
+
 \begin{document}
 
 \title{Diseño y Desarrollo de Robots Educativos para Introducción a la Robótica mediante Fútbol de Robots}
@@ -198,6 +202,114 @@ Para esta primera iteración del diseño, se emplean reguladores lineales simple
 Estas consideraciones de gestión de energía más avanzadas (reguladores conmutados, fusibles resetables, monitoreo dinámico de voltaje) se incorporarán en la segunda iteración del diseño electrónico, una vez validada la funcionalidad del sistema.
 
 \section{Desarrollo de Software}
+Dado que para el funcionamiento del proyecto debe haber un servidor y uno o más clientes, la programación se dividió en tres módulos: base/, extras/ y player/.
+
+{\small\ttfamily
+\begin{verbatim} 
+software/
+├── base/
+│   ├── aruco_detector2.py
+│   ├── servidor.py
+│   └── extras/
+├── player/
+│   ├── control_lib.py
+│   ├── WiFi.py
+│   ├── main.py
+│   └── extras/
+└── extras/
+
+\end{verbatim}
+}
+
+\subsection{base/}
+Tal como lo indica su nombre, este módulo contiene la lógica necesaria para el correcto funcionamiento de la estacion base encargada de transmitirle los comandos al robot. Dentro de este módulo se encuentan dos archivos principales, \textit{aruco\_detector2.py} y \textit{servidor.py}.
+
+\vspace{0.3cm}
+\subsubsection{aruco\_detector2.py}
+Para obtener la posición y orientación de los distintos robots en la cancha, se utilizó un sistema de \textit{ArUco markers}, dado que se trata de un método robusto que permite detectar varios marcadores a la vez con un id especifico para cada uno.
+
+En este archivo se encuentra un diccionario con las distintas familias de marcadores, además de una clase ArUco\_Marker(), que permitirá guardar información sobre cada uno de los marcadores y dibujar en el frame de la camara información relevante para ser vista por el usuario. También se encuentra una clase ArUco\_Detector(), la cual contine ll lógica necesaria para la detección de los marcadores, ademas de guardar los marcadores detectados en una lista.
+
+Librerias utilizadas:
+\begin{itemize}
+    \item cv2
+    \item math
+    \item numpy
+\end{itemize}
+
+\vspace{0.3cm}
+\subsubsection{servidor.py}
+Este es el archivo principal que se deberá correr en el computador base, para la comunicación con los robots a controlar, en este programa se aceptan las conecciones de los robots, junto con estar constantemente enviando tanto las velocidades de los motores, como el encendido y apagado del rodillo y solenoide.
+
+El funcionamiento de código se basa en el uso de dos threads, uno que recibe las velocidades (actualmente enviadas desde el teclado, para control manual) y otro que envía las velocidades haciendo uso del protocolo UDP. La sincronización de las velocidades recibidas y enviadas se realiza mediante una variable global.
+
+Librerias utilizadas:
+\begin{itemize}
+    \item socket
+    \item threading
+    \item time
+    \item keyboard
+\end{itemize}
+
+\vspace{0.3cm}
+Junto a los dos archivos principales, se tiene una carpeta llamada extras, en la cual se encuentran archivos que pueden ser utiles pero que su uso no es requerido en el loop principal del proyecto, dentro de estos archivos se encuentra uno que permite la generación de \textit{ArUco markers} entregandole la familia de marcadores y el id deseado.
+
+
+\subsection{player/}
+Este módulo contiene el programa que se estará ejecutando en cada uno de los robots, es decir, los códigos que se deberán cargar directamente al microcontrolador del robot. Dentro de esta carpeta se encuentran tres archivos principales, \textit{control\_lib.py}, \textit{WiFi.py} y \textit{main.py}.
+
+\vspace{0.3cm}
+\subsubsection{control\_lib.py}
+Para obteer un código más légible y modular, se creo este archivo con el fin de que contenga las funciones relacionadas al control del robot. Dentro de estas funciones se encuentran la detección de los flancos de subida y de bajada de la señal recibida de los encoders, esto con el fin de obtener las rotaciones y realizar la lectura de la velocidad real de las ruedas. Además se encuentran las funciones encargadas de enviar las velocidades a los motores y al rodillo.
+
+No se utilizaron librerias externas en este archivo.
+
+\vspace{0.3cm}
+\subsubsection{WiFi.py}
+Tal como se indicó al iniccio del documento, al coneccion de cada robot con su respectiva base se realizó mediante WiFi, para permitir la conección de una base con multiples robots. Por lo anterior, en ese archivo se encuentran las funciones necesarias para iniciar una conección del robot a una red WiFi.
+
+librerias utilizadas:
+\begin{itemize}
+    \item machine
+    \item network
+    \item rp2
+    \item uasyncio
+\end{itemize}
+
+\vspace{0.3cm}
+\subsubsection{main.py}
+
+Este archivo corresponde al código principal del robot, encargado de gestionar la conexión WiFi, la comunicación con el servidor central y el control en lazo cerrado de los motores. Es el núcleo operativo del sistema, ya que coordina tanto la recepción de comandos como la ejecución de los movimientos.
+
+El programa inicializa los pines de la Raspberry Pi Pico W, incluyendo LEDs de estado, drivers de motor, encoders y el solenoide. También configura la frecuencia de los PWM y variables globales utilizadas para el control.
+
+A través de la función \texttt{iniciar\_cliente()}, el robot establece una conexión UDP con el servidor, envía su identificación y recibe continuamente las velocidades de referencia para ambos motores, además del estado del solenoide y del rodillo. Estos comandos se traducen en acciones sobre el hardware mediante funciones de la librería \texttt{control\_lib}.
+
+En paralelo, mediante un hilo independiente, la función \texttt{close\_loop()} ejecuta el control de velocidad en lazo cerrado. Utilizando las lecturas de los encoders, calcula la velocidad de cada motor, estima la variación de pulsos y aplica un controlador PID para ajustar el \textit{duty cycle} del PWM. De esta forma, el robot puede seguir con precisión las velocidades indicadas por el servidor.
+
+Finalmente, el archivo coordina la conexión WiFi mediante tareas asincrónicas que aseguran mantener el enlace activo y reactivo, mientras supervisa la comunicación y el control en tiempo real.
+
+Librerias utilizadas:
+\begin{itemize}
+    \item machine
+    \item network
+    \item rp2
+    \item socket
+    \item \_thread
+    \item time
+    \item uasyncio
+    \item control\_lib (propia)
+    \item WiFi (propia)
+\end{itemize}
+
+
+\subsection{extras/}
+
+En esta carpeta se incluyen diversos archivos complementarios que pueden resultar útiles para la programación del robot más allá del marco principal del proyecto. Entre ellos se encuentran dos simuladores que permiten realizar pruebas sin depender del robot físico.
+
+El primer simulador corresponde a una base sencilla pensada para servir como punto de partida para desarrollos posteriores. En él es posible controlar dos robots utilizando únicamente el teclado: uno mediante las teclas \texttt{WASD} y el otro con \texttt{IJKL}. Su propósito principal es brindar un entorno simple donde se puedan realizar pruebas rápidas o construir nuevas funcionalidades.
+
+El segundo simulador está orientado específicamente a la evaluación de comportamientos autónomos. En este caso, uno de los robots se controla nuevamente con las teclas \texttt{WASD}, mientras que el robot del equipo contrario recibe sus comandos desde una rutina autónoma definida por el usuario. Esto permite probar estrategias, algoritmos de movimiento y lógica de decisión sin la necesidad de utilizar el hardware real, ofreciendo una herramienta valiosa para experimentar y depurar el código de autonomía.
 
 \subsection{Pruebas realizadas}
 [COMPLETAR]
