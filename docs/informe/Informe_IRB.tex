@@ -6,6 +6,8 @@
 \usepackage[spanish]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, calc}
 \begin{document}
 
 \title{Diseño y Desarrollo de Robots Educativos para Introducción a la Robótica mediante Fútbol de Robots}
@@ -42,8 +44,16 @@ Antes de iniciar el desarrollo, se evaluaron las dimensiones del laboratorio y l
 \begin{itemize}
     \item Tamaño máximo: 10x10 cm.
     \item Peso objetivo: [COMPLETAR].
-    \item Componentes principales: 3 motores DC, 1 solenoide, 1 rodillo de control de balón.
+    \item Componentes principales: Raspberry Pi Pico 2 W, 2 motores DC N20, 1 solenoide, 1 rodillo de control de balón.
     \item Fuente de energía: [COMPLETAR].
+    \item Comunicación: WiFi (preferente) y Bluetooth para interacción con múltiples dispositivos.
+    \item Capacidades funcionales:
+          \begin{itemize}
+              \item Mantener posesión del balón mediante rodillo de control.
+              \item Realizar golpeo del balón mediante solenoide.
+              \item Desplazamiento omnidireccional sobre la cancha.
+              \item Control simultáneo desde múltiples dispositivos.
+          \end{itemize}
 \end{itemize}
 
 \section{Diseño Mecánico}
@@ -54,51 +64,140 @@ El chasis se fabrica en material liviano (por ejemplo, acrílico o PLA impreso e
 
 \subsection{Sistema de locomoción}
 
-El robot consta de dos ruedas motorizadas, junto de un apoyo tipo bola, el cual le entrega un tercer punto de paoyo sin interferir en el movimeinto. Las ruedas motorizadas se encuentran en la parte delantera del robot, una a cada lado. Los motores utilizados son motores DC N20 con una caja reductora de 1:100.
-Esta disposición permite al robot movimientos lineles, junto con giros sobre su eje al aplicar un control diferencial.
+El robot consta de dos ruedas motorizadas junto con un apoyo tipo bola, el cual proporciona un tercer punto de apoyo sin interferir en el movimiento. Las ruedas motorizadas se encuentran en la parte delantera del robot, una a cada lado. Los motores utilizados son motores DC N20 con una caja reductora de relación 1:100.
+
+Esta disposición permite al robot realizar movimientos lineales y giros sobre su eje al aplicar un control diferencial sobre ambas ruedas. La combinación de ambos movimientos permite al robot desplazarse de manera ágil a lo largo de toda la cancha, manteniendo el control del balón durante la maniobra.
 
 \subsection{Sistema de control de balón}
-Se reemplaza la antigua pinza mecánica por un rodillo frontal que permite atrapar y retener el balón de manera más precisa. Esta mejora facilita el control dinámico del balón durante el desplazamiento, aumentando la capacidad de maniobra y estabilidad del sistema.
+Se reemplaza la antigua pinza mecánica por un rodillo frontal activo que permite atrapar, retener y mantener la posesión del balón de manera continua. El rodillo gira constantemente atrayendo el balón hacia el robot y manteniéndolo en contacto, lo que facilita el control dinámico durante el desplazamiento.
+
+Esta solución presenta ventajas significativas sobre la pinza anterior: permite mantener posesión del balón mientras el robot se desplaza, aumenta la capacidad de maniobra en espacios reducidos, y proporciona mayor estabilidad al sistema durante movimientos complejos. El diseño del rodillo asegura que el balón permanezca bajo control incluso durante giros cerrados o cambios bruscos de dirección.
 
 \subsection{Mecanismo de disparo}
-El disparo del balón se realiza mediante un solenoide lineal que proporciona una fuerza de impacto controlada. El diseño incluye amortiguación para proteger los componentes electrónicos y prolongar la vida útil del actuador.
+El disparo del balón se realiza mediante un solenoide lineal que proporciona una fuerza de impacto controlada y repetible. Al activarse, el solenoide empuja un émbolo que golpea el balón con una fuerza suficiente para enviarlo a través de la cancha.
+
+El diseño incluye amortiguación para proteger los componentes electrónicos de vibraciones y prolongar la vida útil del actuador. La temporización del disparo se controla mediante el microcontrolador, permitiendo ajustar la intensidad del golpeo según la estrategia de juego.
 
 \section{Diseño Electrónico}
-El sistema electrónico está basado en un microcontrolador Raspberry Pi Pico 2, elegido por su bajo costo, capacidad de procesamiento dual-core y facilidad de programación.
+El sistema electrónico está basado en un microcontrolador Raspberry Pi Pico 2 W, elegido por su bajo costo, capacidad de procesamiento dual-core, conectividad inalámbrica integrada y facilidad de programación. La arquitectura electrónica se diseñó considerando eficiencia energética, modularidad y robustez ante condiciones de operación exigentes.
 
-\subsection{Componentes electrónicos}
-\begin{itemize}
-    \item Microcontrolador: Raspberry Pi Pico 2 W.
-    \item Controlador de motores: TB6612FNG Dual Motor Driver.
-    \item TIP102
-    \item Sensores (opcional): cámara, sensores de línea o distancia.
-\end{itemize}
+\subsection{Arquitectura del Sistema}
+La arquitectura electrónica del robot se organiza en cuatro subsistemas principales que interactúan de manera coordinada: la unidad de procesamiento central (MCU), la red de distribución de energía, la interfaz de control de motores dual, y el circuito de actuación del solenoide. La Fig.~\ref{fig_block_diagram} presenta un diagrama de bloques de alto nivel que ilustra el flujo de datos y potencia entre estos subsistemas.
 
-\subsection{Circuito propuesto}
-\begin{figure}[!t]
+\begin{figure}[!ht]
     \centering
-    %\includegraphics[width=\linewidth]{[COMPLETAR]}
-    \caption{Diseño del circuito de control y potencia del robot.}
-    \label{fig_circuito}
+    \includegraphics[width=\linewidth]{figs/block_diagram.pdf}
+    \caption{Diagrama de bloques de la arquitectura electrónica. Las líneas rojas indican flujo de potencia y las azules representan flujo de datos y señales de control.}
+    \label{fig_block_diagram}
 \end{figure}
 
+Como se observa en el diagrama, el sistema recibe alimentación de una batería LiPo de 7.4V que se distribuye a través de una red regulada hacia los diferentes subsistemas. El MCU coordina todas las operaciones, procesando comandos inalámbricos (WiFi/Bluetooth), ejecutando algoritmos de control y generando señales de actuación. Los motores DC reciben señales PWM moduladas a través del driver TB6612FNG, mientras que el solenoide se activa mediante un circuito de conmutación basado en transistor TIP102. La retroalimentación de los encoders magnéticos cierra el lazo de control, permitiendo un seguimiento preciso de las velocidades de las ruedas.
+
+\subsection{Unidad de Procesamiento Central (MCU)}
+El Raspberry Pi Pico 2 W constituye el cerebro del sistema, actuando como coordinador central de todas las operaciones del robot. La selección de este microcontrolador se fundamenta en múltiples criterios técnicos y pedagógicos que lo hacen ideal para una plataforma educativa de robótica.
+
+\textbf{Justificación de la selección:}
+
+\textit{Facilidad de programación y versatilidad de lenguajes:}
+Una de las principales ventajas del Raspberry Pi Pico 2 W es su compatibilidad con múltiples entornos de programación, específicamente MicroPython y C/C++. Esta característica resulta fundamental para el curso donde será implementado, ya que permite:
+\begin{itemize}
+    \item \textit{MicroPython}: Ofrece una curva de aprendizaje suave para estudiantes sin experiencia previa en programación de microcontroladores. La sintaxis intuitiva y el desarrollo interactivo mediante REPL facilitan la experimentación rápida y la depuración de código.
+    \item \textit{C/C++}: Proporciona acceso a bajo nivel del hardware para estudiantes avanzados que requieren optimización de rendimiento o funcionalidades específicas. Permite introducir conceptos de programación de sistemas embebidos y gestión eficiente de recursos.
+\end{itemize}
+
+Esta dualidad de lenguajes permite adaptar el nivel de complejidad según el progreso de los estudiantes, desde programación de alto nivel hasta control de hardware a bajo nivel, sin cambiar de plataforma.
+
+\textit{Arquitectura dual-core para procesamiento paralelo:}
+El procesador dual-core ARM Cortex-M33 a 133 MHz representa una ventaja arquitectónica significativa. Como se detalla en la sección de software, esta característica permite:
+\begin{itemize}
+    \item Dedicar un núcleo (Core 0) exclusivamente a tareas de \textbf{comunicación inalámbrica}, gestionando la recepción y envío de paquetes UDP sin interrumpir otras operaciones.
+    \item Asignar el segundo núcleo (Core 1) al \textbf{control en tiempo real} del robot, ejecutando algoritmos PID, lectura de sensores y generación de señales de actuación.
+    \item Garantizar determinismo temporal en el lazo de control, crítico para la estabilidad del sistema.
+\end{itemize}
+
+Esta separación arquitectónica elimina conflictos de recursos y asegura que las comunicaciones de red no introduzcan latencias variables en el control del robot.
+
+\textit{Capacidades GPIO flexibles:}
+El microcontrolador ofrece 26 pines GPIO programables que soportan múltiples protocolos y funciones:
+\begin{itemize}
+    \item \textit{PWM (Pulse Width Modulation)}: 16 canales PWM independientes para control preciso de velocidad de motores y modulación del solenoide.
+    \item \textit{GPIO digital}: Señales de dirección para drivers de motores, activación del solenoide y lectura de encoders.
+    \item \textit{Protocolos de comunicación}: I2C, SPI y UART disponibles para expansión futura con sensores adicionales.
+    \item \textit{ADC}: Conversores analógico-digital para monitoreo de voltaje de batería y otros parámetros analógicos.
+\end{itemize}
+
+\textbf{Interfaz con controladores de motores:}
+El MCU se comunica con el driver TB6612FNG mediante una interfaz mixta digital-PWM optimizada para control diferencial:
+\begin{itemize}
+    \item \textit{Control de velocidad}: Se generan señales PWM independientes para cada motor (pines PWM\_A y PWM\_B), permitiendo ajustar la velocidad de manera continua desde 0 hasta el máximo. La frecuencia PWM se configura típicamente entre 20-40 kHz para minimizar ruido audible y mejorar la eficiencia del driver.
+    \item \textit{Control de dirección}: Cada motor requiere dos señales digitales (IN1/IN2 para motor A, IN3/IN4 para motor B) que determinan el sentido de rotación. La combinación de estas señales permite cuatro estados por motor: avance, retroceso, frenado activo y rueda libre.
+    \item \textit{Habilitación}: Señales de habilitación (STBY) controlan el estado activo/standby del driver, permitiendo gestión de energía cuando el robot está inactivo.
+\end{itemize}
+
+Esta configuración proporciona control completo y preciso de ambos motores, habilitando maniobras complejas como giro en el lugar, trayectorias curvas y control de velocidad independiente para compensación de desbalances mecánicos.
+
+\textbf{Especificaciones técnicas principales:}
+\begin{itemize}
+    \item Procesador dual-core ARM Cortex-M33 a 133 MHz.
+    \item 264 KB de SRAM y 2 MB de memoria flash.
+    \item WiFi 802.11n (2.4 GHz) y Bluetooth 5.2 integrados con antena cerámica.
+    \item 26 pines GPIO multifunción con soporte para PWM, I2C, SPI, UART, ADC.
+    \item Bajo consumo energético: $<$ 1 mA en modo dormido, permitiendo implementar estrategias de ahorro de energía.
+    \item Amplio rango de voltaje de operación (1.8V-5.5V) con regulador interno de 3.3V.
+    \item Interfaz USB 1.1 para programación y depuración.
+\end{itemize}
+
+\subsection{Circuitos de Accionamiento y Control}
+
+\textbf{Driver de Motores (TB6612FNG):}
+El TB6612FNG es un controlador de motores DC dual que permite controlar dos motores de manera independiente. Sus características relevantes son:
+\begin{itemize}
+    \item Corriente continua de 1.2A por canal (3.2A pico).
+    \item Control de dirección mediante señales digitales (IN1, IN2).
+    \item Control de velocidad mediante modulación PWM.
+    \item Modo de frenado activo (cortocircuito de terminales del motor).
+    \item Protección térmica y contra sobrecorriente integradas.
+\end{itemize}
+
+El MCU genera tres señales por motor: dos señales de dirección y una señal PWM para controlar la velocidad. Esta configuración permite control diferencial preciso para la locomoción del robot.
+
+\textbf{Circuito de Actuación del Solenoide (TIP102):}
+El solenoide lineal requiere corrientes superiores a las que el MCU puede suministrar directamente. Se implementa un circuito de conmutación basado en el transistor Darlington TIP102:
+\begin{itemize}
+    \item Capacidad de corriente: hasta 8A continua.
+    \item Tensión de operación: hasta 100V.
+    \item Ganancia de corriente elevada ($h_{FE} > 1000$), permitiendo activación con señales de bajo nivel desde el MCU.
+    \item Diodo de protección en paralelo con el solenoide para suprimir picos de voltaje inductivo.
+\end{itemize}
+
+Una señal digital del MCU controla la base del transistor, permitiendo la conmutación rápida del solenoide para efectuar el disparo del balón.
+
+\subsection{Gestión de Energía}
+La gestión eficiente de la energía es crítica para maximizar la autonomía y proteger los componentes del sistema.
+
+\textbf{Fuente de Alimentación:}
+Se utiliza una batería LiPo de 2 celdas (7.4V nominal, 8.4V cargada completamente) con capacidad adecuada para proporcionar [COMPLETAR] mAh. Las baterías LiPo ofrecen alta densidad energética y capacidad de descarga, esenciales para alimentar los motores y el solenoide.
+
+\textbf{Red de Distribución de Voltajes:}
+El sistema requiere múltiples niveles de voltaje:
+\begin{itemize}
+    \item \textit{7.4V directo}: Alimentación del solenoide para maximizar la fuerza de disparo.
+    \item \textit{5V regulado}: Alimentación de la lógica del TB6612FNG y motores DC.
+    \item \textit{3.3V regulado}: Alimentación del Raspberry Pi Pico 2 W y lógica digital.
+\end{itemize}
+
+Para esta primera iteración del diseño, se emplean reguladores lineales simples para minimizar complejidad. Se distribuyen capacitores de desacople cerca de cada IC para estabilizar la alimentación.
+
+\textbf{Protecciones:}
+\begin{itemize}
+    \item Diodo de protección de polaridad inversa en la línea principal.
+    \item Diodo de protección (flyback) en paralelo con el solenoide para suprimir picos de voltaje inductivo.
+    \item Switch mecánico para activación manual del solenoide en esta primera iteración.
+\end{itemize}
+
+Estas consideraciones de gestión de energía más avanzadas (reguladores conmutados, fusibles resetables, monitoreo dinámico de voltaje) se incorporarán en la segunda iteración del diseño electrónico, una vez validada la funcionalidad del sistema.
+
 \section{Desarrollo de Software}
-El software se estructura en tres módulos principales: control, redes/comunicación y percepción.
-La arquitectura interna del microcontrolador aprovecha los dos núcleos del Raspberry Pi Pico 2, dedicando un núcleo exclusivamente a comunicación y otro a control del robot, optimizando así la respuesta en tiempo real.
-
-\subsection{Control}
-Para el control del robot se utilizará un PID de lazo cerrado, el cual leerá las rotaciones de las ruedas por medio de los \textit{encoders} magnéticos ubicados en la parte trasera de los motores.
-
-\subsection{Redes y Comunicación}
-La comunicación se basa en una arquitectura cliente-servidor, donde cada robot actúa como cliente y un servidor central coordina las acciones globales.
-Se utiliza comunicación inalámbrica mediante WiFi bajo el protocolo UDP, elegido por su baja latencia y capacidad de escalar a múltiples robots sin pérdida significativa de rendimiento.
-El segundo núcleo del microcontrolador se dedica a la recepción y envío de paquetes UDP, asegurando una comunicación robusta y paralela al control.
-
-\subsection{Percepción (Visión por Computador)}
-En esta etapa, se prevé integrar un sistema de percepción visual basado en cámara o sensores ópticos. Este sistema permitirá detectar el balón y la orientación del robot, proporcionando retroalimentación para el control autónomo futuro.
-
-\section{Resultados y Evaluación}
-Se realizaron pruebas iniciales de desplazamiento, control de balón mediante el rodillo y disparo. Los resultados mostraron una mejora significativa en la precisión de conducción y capacidad de respuesta del sistema.
 
 \subsection{Pruebas realizadas}
 [COMPLETAR]
@@ -109,6 +208,9 @@ Se realizaron pruebas iniciales de desplazamiento, control de balón mediante el
 \section{Conclusiones y Trabajo Futuro}
 El diseño presentado demuestra que es posible construir una plataforma educativa robusta, modular y escalable. La sustitución de la pinza por un rodillo mejoró considerablemente la manipulación del balón.
 Como trabajo futuro, se planea incorporar algoritmos de visión artificial, control autónomo y estrategias cooperativas entre múltiples robots.
+
+\section*{Disponibilidad de Material}
+Todo el material relacionado con este proyecto, incluyendo diseños mecánicos (archivos CAD), esquemáticos electrónicos (PCB y circuitos), código fuente del software (MicroPython/C) y documentación técnica, se encuentra disponible de forma abierta en el repositorio GitHub del proyecto: \url{https://github.com/LucasZuniga/Proyecto_IRB}
 
 \section*{Agradecimientos}
 Se agradece a [COMPLETAR] por facilitar el espacio y los materiales para el desarrollo del proyecto.
