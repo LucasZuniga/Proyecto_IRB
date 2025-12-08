@@ -78,7 +78,7 @@ async def iniciar_cliente(ip, puerto, nombre_cliente, wlan, led_cliente):
     while True:
         if wlan.isconnected():
             print("Iniciando coneccion al servidor...")
-            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             server_socket.connect((ip, puerto))
             led_cliente.on()
             print("Conectado al servidor")
