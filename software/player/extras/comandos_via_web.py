@@ -8,7 +8,7 @@ import rp2
 import sys
 from machine import Pin, PWM
 from time import sleep, sleep_ms, ticks_us, time_ns
-from jugador.control_lib import *
+from player.control_lib import *
 import _thread
 
 
