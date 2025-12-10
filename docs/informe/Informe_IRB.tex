@@ -19,15 +19,22 @@
 \end{abstract}
 
 \section{Introducción}
-\IEEEPARstart{E}{l} presente trabajo tiene como objetivo desarrollar una plataforma educativa que facilite la enseñanza de conceptos básicos de robótica mediante robots futbolistas. Este nuevo diseño busca reemplazar la versión utilizada previamente en el curso IRB2001, incorporando mejoras en el control del balón, permitiendo la participación simultánea de múltiples robots por equipo y habilitando nuevos métodos de comunicación entre el computador del estudiante y el robot.
+\IEEEPARstart{L}{a} robótica educativa se ha consolidado como una herramienta pedagógica fundamental para la enseñanza de disciplinas STEM (Ciencia, Tecnología, Ingeniería y Matemáticas). Estudios previos han demostrado que los entornos competitivos, como la RoboCupJunior~\cite{robocup}, aumentan significativamente la motivación estudiantil y facilitan la adquisición de conceptos complejos en comparación con los métodos tradicionales. En el ámbito universitario, el uso de plataformas de ``fútbol de robots'' permite introducir a los estudiantes en áreas críticas como el control automático, la visión por computador (CV) y la programación en tiempo real de una manera lúdica pero rigurosa. Este proyecto se enmarca en el diseño de una herramienta de aprendizaje para un curso introductorio universitario, buscando equilibrar la complejidad técnica con la accesibilidad pedagógica.
 
-\subsection{Objetivos del proyecto}
+Sin embargo, la implementación de estas plataformas en cursos masivos presenta desafíos específicos relacionados con el costo, el espacio físico y la funcionalidad mecánica. En primer lugar, las restricciones de infraestructura obligan a realizar los partidos en canchas de dimensiones reducidas, lo que impone límites estrictos al tamaño de los robots. En segundo lugar, se requiere una solución de presupuesto moderado que sea replicable para múltiples grupos de estudiantes. Finalmente, y como punto crítico identificado en iteraciones previas, los mecanismos tradicionales de manipulación de balón basados en ``pinzas'' pasivas o mecánicas han demostrado ser insuficientes. Estos mecanismos limitan severamente el control del balón durante el movimiento, dificultando la fluidez del juego y frustrando el objetivo pedagógico de enseñar estrategias de control dinámico.
+
+Para abordar esta problemática, este trabajo presenta el diseño y desarrollo de una nueva plataforma robótica compacta y de bajo costo, optimizada para un área de juego restringida. La propuesta se distingue por tres innovaciones principales que responden directamente a las limitaciones detectadas:
+
 \begin{itemize}
-    \item Diseñar un robot funcional dentro de un área máxima de 10x10 cm.
-    \item Desarrollar un sistema de control capaz de manipular un balón con precisión mediante un rodillo.
-    \item Implementar una estructura robusta y ligera para facilitar el movimiento.
-    \item Introducir conceptos de control, sensado, comunicación y visión computacional en un entorno educativo.
+    \item \textit{Diseño Compacto y Estandarizado}: Se define una base de 10$\times$10 cm, dimensionada específicamente para garantizar maniobrabilidad en espacios reducidos sin sacrificar la capacidad de albergar componentes electrónicos esenciales.
+
+    \item \textit{Sistema de Control de Balón Activo}: Se sustituye la antigua pinza por un mecanismo de rodillo motorizado (\textit{dribbler}). Esta innovación permite aplicar un efecto de retroceso (\textit{backspin}) al balón, mejorando drásticamente la precisión y permitiendo la retención de la pelota mientras el robot se desplaza, una técnica validada en ligas profesionales como la Small Size League~\cite{dribble}.
+
+    \item \textit{Arquitectura Electrónica Accesible}: Se implementa el microcontrolador Raspberry Pi Pico 2 W, seleccionado por su bajo costo y capacidad de procesamiento dual-core, lo que permite gestionar la comunicación inalámbrica y los lazos de control de manera eficiente y paralela.
 \end{itemize}
+
+De esta manera, la plataforma propuesta no solo cumple con las restricciones físicas y económicas, sino que eleva el nivel técnico del curso, permitiendo a los estudiantes experimentar con conceptos avanzados de control y robótica móvil.
+
 
 \section{Análisis Inicial y Restricciones de Diseño}
 Antes de iniciar el desarrollo, se evaluaron las dimensiones del laboratorio y las limitaciones de los materiales disponibles. Se determinó que una base de 10x10 cm ofrecía un equilibrio adecuado entre estabilidad, maniobrabilidad y espacio para los componentes electrónicos.
@@ -89,7 +96,7 @@ El Raspberry Pi Pico 2 W constituye el cerebro del sistema, actuando como coordi
 
 \textbf{Justificación de la selección:}
 
-\textit{Facilidad de programación y versatilidad de lenguajes:}  
+\textit{Facilidad de programación y versatilidad de lenguajes:}
 Una de las principales ventajas del Raspberry Pi Pico 2 W es su compatibilidad con múltiples entornos de programación, específicamente MicroPython y C/C++. Esta característica resulta fundamental para el curso donde será implementado, ya que permite:
 \begin{itemize}
     \item \textit{MicroPython}: ofrece una curva de aprendizaje suave para estudiantes sin experiencia en microcontroladores. Su sintaxis intuitiva y el entorno interactivo REPL facilitan la experimentación y depuración rápida.
@@ -98,7 +105,7 @@ Una de las principales ventajas del Raspberry Pi Pico 2 W es su compatibilidad c
 
 Esta dualidad permite adaptar el nivel de complejidad según el progreso del estudiante sin necesidad de cambiar de plataforma.
 
-\textit{Arquitectura dual-core para procesamiento paralelo:}  
+\textit{Arquitectura dual-core para procesamiento paralelo:}
 El procesador dual-core ARM Cortex-M33 a 133 MHz ofrece ventajas significativas. Como se detalla en la sección de software, esta característica permite:
 \begin{itemize}
     \item Dedicación de un núcleo (Core 0) a tareas de \textbf{comunicación inalámbrica}, gestionando recepción y envío de paquetes UDP sin interferir en otras operaciones.
@@ -108,7 +115,7 @@ El procesador dual-core ARM Cortex-M33 a 133 MHz ofrece ventajas significativas.
 
 Esta separación evita conflictos de recursos y asegura que la comunicación no introduzca latencias variables.
 
-\textit{Capacidades GPIO flexibles:}  
+\textit{Capacidades GPIO flexibles:}
 El microcontrolador ofrece 26 pines GPIO programables con soporte para:
 \begin{itemize}
     \item \textit{PWM}: 16 canales independientes para control de motores y modulación del solenoide.
@@ -157,7 +164,7 @@ El MCU se comunica con el TB6612FNG mediante una interfaz digital-PWM:
 
 \subsection{Gestión de Energía}
 
-\textbf{Fuente de Alimentación:}  
+\textbf{Fuente de Alimentación:}
 Batería LiPo de 4 celdas (14.8V, 16.8V cargada) y 1500 mAh.
 
 \textbf{Red de Distribución de Voltajes:}
