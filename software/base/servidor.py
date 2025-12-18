@@ -9,7 +9,7 @@ vels_1 = 0
 
 ## Servidor ##
 def iniciar_servidor():
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind(("0.0.0.0", 8080))
     server_socket.listen(5)
     print("[Incializado servidor:] escuchando nuevos sockets:")
