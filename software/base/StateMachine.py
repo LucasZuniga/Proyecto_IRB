@@ -4,6 +4,7 @@ import cv2
 import math
 import os
 import random
+import time
 
 # Librrias Propias
 from aruco_detector2 import ArUco_Marker
@@ -32,17 +33,45 @@ ArucoType: dict = {
     'DICT_APRILTAG_36h11': cv2.aruco.DICT_APRILTAG_36h11,
 }
 
+class Robot:
+    def __init__(self, id: int, position: tuple, angle: float):
+        self.id = id
+        self.pos = position
+        self.angle = angle
+        self.rodillo = 0
+        self.solenoide = 0
+        
+    def __str__(self) -> str:
+        return f"Robot ID: {self.id}, Position: {self.pos}, Angle: {self.angle}"
+        
+    def has_ball(self, ball, frame) -> bool:
+        rob_ball_pose = (self.pos[0] + 100 * math.cos(math.radians(self.angle)),     ## 15 es la distancia desde el centro del robot al frente, ajustar
+                         self.pos[1] + 100 * math.sin(math.radians(self.angle)))
+        
+        cv2.circle(frame, (int(rob_ball_pose[0]), int(rob_ball_pose[1])), 10, (0, 255, 0), -1)
+        
+        if dist(rob_ball_pose, ball.position) < 10.0:   # Si la pelota est a menos de 10 unidades del frente del robot
+            return True
+        return False
+    
+    def shoot(self):
+        self.solenoide = 1
+        time.sleep_ms(10)
+        self.solenoide = 0
+    
+class Ball:
+    def __init__(self, position: tuple):
+        self.position = position
 
-def aruco_marker_pose_estimation(cap, aruco_dict, aruco_params): 
+def aruco_marker_pose_estimation(cap, aruco_dict, aruco_params, robots: dict): 
     ret, frame = cap.read() 
     frame_gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
     corners, ids, _ = cv2.aruco.detectMarkers(frame_gray, aruco_dict, parameters= aruco_params)
-    robots: dict = {}
     if ids is not None:
         for i in range(len(ids)):
             if ids[i] < 10:   # Solo se consideran los marcadores con ID menor a 10
                 new_marker = ArUco_Marker(corners[i], ids[i])
-                robots[int(new_marker.id)] = (new_marker.centre, new_marker.angle)
+                robots[int(new_marker.id)] = Robot(new_marker.id, new_marker.centre, new_marker.angle)      # Actualiza la posicion y angulo del robot, y lo crea si no exise 
                 new_marker.draw_marker(frame)
             
     return frame, robots
@@ -66,7 +95,7 @@ def detectar_color(low_color, high_color, img):
     
     for contour in contours:
         # Ignorar contornos muy pequeños
-        if cv2.contourArea(contour) > 100:
+        if cv2.contourArea(contour) > 200:
             # Obtenemos el bounding box de cada contorno
             x, y, w, h = cv2.boundingRect(contour)
             prom_x = int(x + w / 2)
@@ -78,20 +107,22 @@ def detectar_color(low_color, high_color, img):
             # Dibujamos el centro del objeto detectado en la imagen
             color_caja = (0, 0, 0)
             color_name = "Object"
-            cv2.rectangle(img_masked, (x, y), (x + w, y + h), color_caja, 2)
             cv2.rectangle(img, (x, y), (x + w, y + h), color_caja, 2)
-            cv2.putText(img_masked, color_name, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color_caja, 1, cv2.LINE_AA)
             cv2.putText(img, color_name, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color_caja, 1, cv2.LINE_AA)
             cv2.circle(img, (prom_x, prom_y), 5, (0, 255, 0), -1)
     
     # Retornamos la lista de centros
     return centros
 
+def detectar_pelota(ball, frame):
+    center = detectar_color((15, 50, 50), (30, 255, 255), frame)
+    ball.position = center[0] if len(center) > 0 else ball.position
+
 def calcular_error_rob(rob, p1):
-    d_y = p1[1] - rob[0][1]
-    d_x = p1[0] - rob[0][0]
+    d_y = p1[1] - rob.pos[1]
+    d_x = p1[0] - rob.pos[0]
     angulo = math.degrees(math.atan2(d_y, d_x))
-    delta_theta = (angulo - rob[1])
+    delta_theta = (angulo - rob.angle)
     
     if delta_theta > 180:       # Converir a rango [-180, 180]
         delta_theta -= 360
@@ -108,27 +139,29 @@ def StateMachine():
     aruco_dict = cv2.aruco.Dictionary_get(ArucoType["DICT_4X4_1000"])
     aruco_params = cv2.aruco.DetectorParameters_create()
     
-    rodillo = 0
     Kp_angle = 1.0
     Kp_dist = 0.5
-    poses = []
+    robots = {}
+    
+    ball = Ball((0, 0))
     
     STATE = 'IDLE'
     print("Press SPACE to start the state machine.")
     while True:
+        print(f"Current State: {STATE}")
         # Always get the latest frame and detected markers
-        frame, robots = aruco_marker_pose_estimation(cap, aruco_dict, aruco_params)
-        # centros = detectar_color((20, 50, 50), (40, 255, 255), frame)
-        centros = detectar_color((25, 50, 60), (40, 255, 255), frame)
+        frame, robots = aruco_marker_pose_estimation(cap, aruco_dict, aruco_params, robots)
+        detectar_pelota(ball, frame)
 
-        if frame is not None:
-            cv2.imshow('ArUco Detection',frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'): 
-                pass
+
                   
-        os.system('cls') # Clear console output
-        if dist(robots[0][0], centros[0]) < 30.0:
-            rodillo = 1
+        # os.system('cls') # Clear console output
+        
+        for ids in robots:
+            if dist(robots[ids].pos, ball.position) < 30.0:
+                robots[ids].rodillo = 1
+            else:
+                robots[ids].rodillo = 0
         
         if keyboard.is_pressed("e"):
             STATE = 'EXIT'
@@ -140,9 +173,9 @@ def StateMachine():
                 STATE = 'ANGLE_BALL'
             
         elif STATE == 'ANGLE_BALL':
-            if len(robots) >= 1 and len(centros) >= 1:
-                print(robots[0][0], centros[0])
-                rob_ball_angle = calcular_error_rob(robots[0], centros[0])
+            if len(robots) >= 1:
+                print(robots[0], ball.position)
+                rob_ball_angle = calcular_error_rob(robots[0], ball.position)
                 if rob_ball_angle < 5.0 and rob_ball_angle > -5.0:
                     STATE = 'APPROACH_BALL'
                 else:
@@ -152,23 +185,26 @@ def StateMachine():
 
             
         elif STATE == 'APPROACH_BALL':
-            
-            if has_ball(robots[0]): # Function to determine if the robot has the ball
+            if robots[0].has_ball(ball, frame) : # Function to determine if the robot has the ball
                 STATE = 'AIM_TARGET'
                 target_angle = round((random.random() - 0.5) * 180.0)   # Random target angle between -180 and 180 degrees
-            
+            else:
+                rob_ball_dist = dist(robots[0].pos, ball.position)
+                vel_r, vel_l = Kp_dist * rob_ball_dist, Kp_dist * rob_ball_dist   # Proporcional a la distancia entre robot y pelota
+                
+                print("Distance to ball:", rob_ball_dist)
         
         
         elif STATE == 'AIM_TARGET':
-            dif = target_angle - robots[0][1]
+            dif = target_angle - robots[0].angle
             if abs(dif) < 5.0:
                 STATE = 'SHOOT'
             else:
                 vel_r, vel_l = dif * Kp_angle, -dif * Kp_angle
                     
         elif STATE == 'SHOOT':
-            if has_ball(robots[0]):
-                shoot()
+            if robots[0].has_ball(ball, frame):
+                robots[0].shoot()
                 
             else:
                 STATE = 'ANGLE_BALL'    # Go back to find the ball again
@@ -177,7 +213,10 @@ def StateMachine():
         elif STATE == 'EXIT':
             break
         
-        
+        if frame is not None:
+            cv2.imshow('ArUco Detection',frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'): 
+                pass
 
 
 if __name__ == "__main__":
