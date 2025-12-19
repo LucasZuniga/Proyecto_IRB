@@ -43,11 +43,12 @@ async def check_wifi(ssid, password, wlan, led):
             
         await uasyncio.sleep_ms(100)
     
-# WiFi inputs
-ssid = 'Lucas'
-password = '1234567890'
-
+### Main program to test WiFi connection ###
 if __name__ == "__main__":
+    # WiFi inputs
+    ssid = 'Lucas'
+    password = '1234567890'
+    
     wlan = network.WLAN(network.STA_IF)
     
     try:
