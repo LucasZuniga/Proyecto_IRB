@@ -4,8 +4,9 @@ import time
 
 # Librerías Propias
 from clases import Robot, Controlable_Robot, Ball
-from get_field_data import Get_Field_Data
-from servidor import iniciar_servidor
+from Field_process import Get_Field_Data
+from Server_process import server_process
+from State_process import StateMachine
 
 # Configuramos el Manager para exponer los métodos
 class SoccerManager(SyncManager): pass
@@ -27,14 +28,13 @@ if __name__ == "__main__":
         })
         ball_shared = manager.Ball()
 
-        # Lanzamos Get_Field_Data
-        # controller_p = mp.Process(target=Get_Field_Data, args=(robots_shared, ball_shared))
-        # controller_p.start()
-        
-        server_p = mp.Process(target=iniciar_servidor_process, args=(robots_shared, ball_shared))
+        controller_p = mp.Process(target=StateMachine, args=(robots_shared, ball_shared,))
+        controller_p.start()
+
+        server_p = mp.Process(target=server_process, args=(robots_shared,))
         server_p.start()
         
-        vision_p = mp.Process(target=Get_Field_Data, args=(robots_shared, ball_shared))
+        vision_p = mp.Process(target=Get_Field_Data, args=(robots_shared, ball_shared,))
         vision_p.start()
 
         print("--- Monitor de Datos Iniciado ---")
@@ -46,10 +46,11 @@ if __name__ == "__main__":
                     r0 = robots_shared[0]
                     r0_pos = r0.get_pos()
                     r0_ang = r0.get_angle()
-                    print(f"Bola: {b_pos} | Robot 0: {r0_pos} @ {r0_ang}°")
+                    # print(f"Bola: {b_pos} | Robot 0: {r0_pos} @ {r0_ang}°")
                 
                 time.sleep(0.1)
         except KeyboardInterrupt:
             print("Finalizando...")
             vision_p.terminate()
-            vision_p.join()
+            controller_p.terminate()
+            server_p.terminate()

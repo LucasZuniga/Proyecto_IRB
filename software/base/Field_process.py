@@ -17,7 +17,7 @@ def aruco_marker_pose_estimation(cap, aruco_dict, aruco_params):
     if ids is not None:
         for i in range(len(ids)):
             if ids[i] < 10:   # Solo se consideran los marcadores con ID menor a 10
-                robots[int(ids[i])] = (corners[i])
+                robots[int(ids[i])] = (corners[i][0])
             
     return frame, robots
 
@@ -55,34 +55,27 @@ def detectar_pelota(frame):
     ball_pos = detectar_color((15, 50, 50), (30, 255, 255), frame)
     return ball_pos
 
-def draw_ball(frame, ball_pos):
-    if ball_pos is not None:
-        x, y, w, h = ball_pos
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 255), 2)
-        cv2.putText(frame, "Ball", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
-        cv2.circle(frame, (int(x + w/2), int(y + h/2)), 5, (0, 255, 0), -1)
+def draw_ball(frame, info):
+    x = info[0]
+    y = info[1]
+    w = info[2]
+    h = info[3]
+    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 0), 2)
+    cv2.putText(frame, "Ball", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+    cv2.circle(frame, (int(x + w/2), int(y + h/2)), 5, (0, 255, 0), -1)
 
         
-def draw_robot(frame, corners, id):
-    ally = [0]
-    if id in ally:
-        color = (255, 0, 0) 
-    else: 
-        color = (0, 0, 255)
-
-    pts = np.array([
-        [int(corners[0][0][0]), int(corners[0][0][1])],
-        [int(corners[0][3][0]), int(corners[0][3][1])],
-        [int(corners[0][2][0]), int(corners[0][2][1])],
-        [int(corners[0][1][0]), int(corners[0][1][1])]
-        ], dtype=np.int32)
-
+def draw_robot(frame, info):
+    pts = info[0]
+    color = info[1]
+    pos = info[2]
+    top_centre = info[3]
+    id = info[4]
+    angle = info[5]
+    tl = info[6]
     cv2.polylines(frame, [pts], isClosed=True, color=color, thickness=2)
-    
-    # cv2.line(frame, robot.pos, robot.top_centre, color, 2)
-    # cv2.putText(frame, f"ID: {robot.id}, {robot.angle} deg", (int(robot.tl[0]), int(robot.tl[1]) - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2, )
-
-        
+    cv2.line(frame, pos, top_centre, color, 2)
+    cv2.putText(frame, f"ID: {id}, {angle} deg", (int(tl[0]), int(tl[1]) - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2, )
 
 
 def Get_Field_Data(robots: dict, ball: Ball):
@@ -102,12 +95,12 @@ def Get_Field_Data(robots: dict, ball: Ball):
                 r = robots[id]
                 r.update_position(robots_pos[id])
                 # r.draw(frame)
-                draw_robot(frame, robots_pos[id], id)
+                draw_robot(frame, r.get_draw_info())
                 robots[id] = r
             
         if ball_pos is not None:
             ball.update_position(ball_pos)
-            draw_ball(frame, ball_pos)
+            draw_ball(frame, ball.get_draw_info())
             # ball.draw(frame)
         
         # cv2.putText(frame, f"STATE: {STATE}", (int(frame.shape[0]/2), 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1, cv2.LINE_AA)

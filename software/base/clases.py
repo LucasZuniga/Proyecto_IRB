@@ -34,11 +34,11 @@ class Robot():
         else:
             return f"Enemy Robot ID: {self.id}, Position: {self.pos}, Angle: {self.angle}"
         
-    def update_position(self, corners: list):
-        self.tl = corners[0][0]
-        self.tr = corners[0][1]
-        self.bl = corners[0][2]
-        self.br = corners[0][3]
+    def update_position(self, corners):
+        self.tl = corners[0]
+        self.tr = corners[1]
+        self.bl = corners[2]
+        self.br = corners[3]
         
         self.get_centre()
         self.calc_angle()
@@ -73,7 +73,7 @@ class Robot():
             return True
         return False
     
-    def draw(self, frame):
+    def get_draw_info(self):
         if self.is_ally: 
             color = (255, 0, 0) 
         else: 
@@ -86,9 +86,7 @@ class Robot():
             [int(self.tr[0]), int(self.tr[1])]
             ], dtype=np.int32)
 
-        cv2.polylines(frame, [pts], isClosed=True, color=color, thickness=2)
-        cv2.line(frame, self.pos, self.top_centre, color, 2)
-        cv2.putText(frame, f"ID: {self.id}, {self.angle} deg", (int(self.tl[0]), int(self.tl[1]) - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2, )
+        return pts, color, self.pos, self.top_centre, self.id, self.angle, self.tl
         
     def get_pos(self): return self.pos
     def get_angle(self): return self.angle
@@ -102,11 +100,26 @@ class Controlable_Robot(Robot):
         self.vel_l = 0
         self.rodillo = 0
         self.solenoide = 0
+        
+    def get_server_data(self):
+        return f"{self.vel_r}, {self.vel_l}, {self.solenoide}, {self.rodillo}"
     
-    def shoot(self):
+    def set_velocities(self, r, l):
+        self.vel_r = r
+        self.vel_l = l
+    
+    def sol_on(self):
         self.solenoide = 1
-        time.sleep_ms(10)
+    
+    def sol_off(self):
         self.solenoide = 0
+        
+    def rod_on(self):
+        self.rodillo = 1
+    
+    def rod_off(self):
+        self.rodillo = 0
+
 
 
 class Ball():
@@ -120,10 +133,7 @@ class Ball():
         self.h = data[3]
         self.position = (int(self.x + self.w/2), int(self.y + self.h/2))
         
-        
-    def draw(self, frame):
-            cv2.rectangle(frame, (self.x, self.y), (self.x + self.w, self.y + self.h), (0,0,0), 2)
-            cv2.putText(frame, "Ball", (self.x, self.y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA)
-            cv2.circle(frame, self.position, 5, (0, 255, 0), -1)
-            
+    def get_draw_info(self):
+        return self.x, self.y, self.w, self.h
+
     def get_position(self): return self.position

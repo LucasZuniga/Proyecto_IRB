@@ -98,7 +98,7 @@ def detectar_color(low_color, high_color, img, name, color_caja=(0, 0, 0)):
     
     for contour in contours:
         # Ignorar contornos muy pequeños
-        if cv2.contourArea(contour) > 200:
+        if cv2.contourArea(contour) > 10:
             # Obtenemos el bounding box de cada contorno
             x, y, w, h = cv2.boundingRect(contour)
             prom_x = int(x + w / 2)
@@ -116,7 +116,7 @@ def detectar_color(low_color, high_color, img, name, color_caja=(0, 0, 0)):
     return centros
 
 def detectar_pelota(ball, frame):
-    center = detectar_color((15, 50, 50), (30, 255, 255), frame, "Ball")
+    center = detectar_color((15, 50, 50), (40, 255, 255), frame, "Ball")
     ball.position = center[0] if len(center) > 0 else ball.position
 
 def calcular_error_rob(rob, p1):
