@@ -5,6 +5,7 @@ import math
 import os
 import random
 import time
+import threading
 
 # Librrias Propias
 from aruco_detector2 import ArUco_Marker
@@ -40,6 +41,8 @@ class Robot:
         self.angle = angle
         self.rodillo = 0
         self.solenoide = 0
+        self.vel_r = 0
+        self.vel_l = 0
         
     def __str__(self) -> str:
         return f"Robot ID: {self.id}, Position: {self.pos}, Angle: {self.angle}"
@@ -77,7 +80,7 @@ def aruco_marker_pose_estimation(cap, aruco_dict, aruco_params, robots: dict):
     return frame, robots
 
 
-def detectar_color(low_color, high_color, img):
+def detectar_color(low_color, high_color, img, name, color_caja=(0, 0, 0)):
     # Convertimos la imagen a HSV
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     
@@ -105,17 +108,15 @@ def detectar_color(low_color, high_color, img):
             centros.append((prom_x, prom_y))
             
             # Dibujamos el centro del objeto detectado en la imagen
-            color_caja = (0, 0, 0)
-            color_name = "Object"
             cv2.rectangle(img, (x, y), (x + w, y + h), color_caja, 2)
-            cv2.putText(img, color_name, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color_caja, 1, cv2.LINE_AA)
+            cv2.putText(img, name, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color_caja, 1, cv2.LINE_AA)
             cv2.circle(img, (prom_x, prom_y), 5, (0, 255, 0), -1)
     
     # Retornamos la lista de centros
     return centros
 
 def detectar_pelota(ball, frame):
-    center = detectar_color((15, 50, 50), (30, 255, 255), frame)
+    center = detectar_color((15, 50, 50), (30, 255, 255), frame, "Ball")
     ball.position = center[0] if len(center) > 0 else ball.position
 
 def calcular_error_rob(rob, p1):
@@ -134,10 +135,16 @@ def dist(p1, p2):
 
 
 def StateMachine():
+    global vel_r
+    global vel_l
+    global sol
+    global rod
     
     cap = cv2.VideoCapture(0)
     aruco_dict = cv2.aruco.Dictionary_get(ArucoType["DICT_4X4_1000"])
     aruco_params = cv2.aruco.DetectorParameters_create()
+    
+    vels = [0, 0, 0, 0]   # vel_r, vel_l, solenoide, rodillo
     
     Kp_angle = 1.0
     Kp_dist = 0.5
@@ -148,11 +155,10 @@ def StateMachine():
     STATE = 'IDLE'
     print("Press SPACE to start the state machine.")
     while True:
-        print(f"Current State: {STATE}")
         # Always get the latest frame and detected markers
         frame, robots = aruco_marker_pose_estimation(cap, aruco_dict, aruco_params, robots)
         detectar_pelota(ball, frame)
-
+        cv2.putText(frame, f"STATE: {STATE}", (int(frame.shape[0]/2), 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
 
                   
         # os.system('cls') # Clear console output
@@ -179,7 +185,7 @@ def StateMachine():
                 if rob_ball_angle < 5.0 and rob_ball_angle > -5.0:
                     STATE = 'APPROACH_BALL'
                 else:
-                    vel_r, vel_l = rob_ball_angle * Kp_angle, -rob_ball_angle * Kp_angle        # Proporcional al angulo entre robot y pelota
+                    vels[0], vels[1] = rob_ball_angle * Kp_angle, -rob_ball_angle * Kp_angle        # Proporcional al angulo entre robot y pelota
         
                 print("Angle to ball:", rob_ball_angle)
 
@@ -220,7 +226,9 @@ def StateMachine():
 
 
 if __name__ == "__main__":
-    StateMachine()
+    # StateMachine()
+    vel_thread = threading.Thread(target=StateMachine)
+    vel_thread.start()
     
     
 

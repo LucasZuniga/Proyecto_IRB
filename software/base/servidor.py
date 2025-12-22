@@ -2,6 +2,10 @@ import socket
 import threading
 import time
 import keyboard
+import multiprocessing
+import os
+
+from StateMachine import StateMachine
 
 
 clientes = []
@@ -111,10 +115,15 @@ def actualizar_vel_keyboard():
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    vels_rob_0 = multiprocessing.Array('i', range(4))
     
     # Inicializa el Thread en el que se calculan las velocidades necesarias
-    vel_thread = threading.Thread(target=actualizar_vel_keyboard)
+    # vel_thread = threading.Thread(target=actualizar_vel_keyboard)
+    # vel_thread = threading.Thread(target=StateMachine)
+    vel_thread = multiprocessing.Process(target=StateMachine)
     vel_thread.start()
     
-    # Un segundo Thread (principal), se encarga de levantar el servidor y enviar las velocidades a los robots
-    iniciar_servidor()
+    # # Un segundo Thread (principal), se encarga de levantar el servidor y enviar las velocidades a los robots
+    # # server_thread = threading.Thread(target=iniciar_servidor)
+    server_thread = multiprocessing.Process(target=iniciar_servidor)
+    server_thread.start()
