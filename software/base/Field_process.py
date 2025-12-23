@@ -5,7 +5,7 @@ import time
 import numpy as np
 
 # Librrias Propias
-from aruco_detector2 import ArucoType
+from extras.aruco_detector2 import ArucoType
 from clases import Ball, Robot, Controlable_Robot
 
 

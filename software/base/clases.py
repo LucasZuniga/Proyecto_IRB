@@ -8,16 +8,16 @@ def dist(p1: tuple, p2: tuple) -> float:
     """Calcula la distancia euclidiana entre dos puntos 2D."""
     return math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
 
-def calcular_error_rob(rob, p1):
-    d_y = p1[1] - rob.pos[1]
-    d_x = p1[0] - rob.pos[0]
-    angulo = math.degrees(math.atan2(d_y, d_x))
-    delta_theta = (angulo - rob.angle)
+# def calcular_error_rob(rob_pos, rob_angle, p1):
+#     d_y = p1[1] - rob_pos[1]
+#     d_x = p1[0] - rob_pos[0]
+#     angulo = math.degrees(math.atan2(d_y, d_x))
+#     delta_theta = (angulo - rob_angle)
     
-    if delta_theta > 180:       # Converir a rango [-180, 180]
-        delta_theta -= 360
+#     if delta_theta > 180:       # Converir a rango [-180, 180]
+#         delta_theta -= 360
         
-    return delta_theta
+#     return delta_theta
 
 # Clases
 class Robot():
@@ -64,14 +64,6 @@ class Robot():
         theta_deg = int((theta_rad/math.pi)*360)
 
         self.angle = theta_deg
-        
-    def has_ball(self, ball) -> bool:
-        rob_ball_pose = (self.pos[0] + 15 * math.cos(math.radians(self.angle)),     ## 15 es la distancia desde el centro del robot al frente, ajustar
-                         self.pos[1] + 15 * math.sin(math.radians(self.angle)))
-        
-        if dist(rob_ball_pose, ball.position) < 10.0:   # Si la pelota est a menos de 10 unidades del frente del robot
-            return True
-        return False
     
     def get_draw_info(self):
         if self.is_ally: 
@@ -102,7 +94,7 @@ class Controlable_Robot(Robot):
         self.solenoide = 0
         
     def get_server_data(self):
-        return f"{self.vel_r}, {self.vel_l}, {self.solenoide}, {self.rodillo}"
+        return f"{int(self.vel_r)}, {int(self.vel_l)}, {int(self.solenoide)}, {int(self.rodillo)}"
     
     def set_velocities(self, r, l):
         self.vel_r = r
@@ -121,7 +113,6 @@ class Controlable_Robot(Robot):
         self.rodillo = 0
 
 
-
 class Ball():
     def __init__(self):
         self.position = (-1, -1)
@@ -136,4 +127,4 @@ class Ball():
     def get_draw_info(self):
         return self.x, self.y, self.w, self.h
 
-    def get_position(self): return self.position
+    def get_pos(self): return self.position

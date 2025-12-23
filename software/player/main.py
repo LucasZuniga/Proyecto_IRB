@@ -3,7 +3,7 @@
 import network
 import socket
 import _thread
-import rp2
+# import rp2
 import sys
 import uasyncio
 from machine import Pin, PWM
@@ -84,7 +84,7 @@ async def iniciar_cliente(ip, puerto, nombre_cliente, wlan, led_cliente):
             print("Iniciando coneccion al servidor...")
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # DGRAM para UDP, al mandar constantemente las velocidades, no nos importa si alguna se pierde o corrompe
             server_socket.connect((ip, puerto))
-            led_cliente.on()
+            led.on()
             print("Conectado al servidor")
 
             # Enviar nombre o ID al servidor
@@ -109,7 +109,7 @@ async def iniciar_cliente(ip, puerto, nombre_cliente, wlan, led_cliente):
                         
                 except KeyboardInterrupt:
                     print("Server connection close")
-                    led_cliente.off()
+                    led.off()
                     break
                 
                 await uasyncio.sleep_ms(100)
@@ -239,7 +239,7 @@ ssid = 'Lucas'
 password = '1234567890'
 wlan = network.WLAN(network.STA_IF)
 # Servidor
-ip_server = '10.12.233.53'
+ip_server = '10.202.164.53'
 port = 8080
 robot_id = "FutBot_1"
 

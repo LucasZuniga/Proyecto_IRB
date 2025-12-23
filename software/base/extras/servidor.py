@@ -5,7 +5,7 @@ import keyboard
 import multiprocessing
 import os
 
-from StateMachine import StateMachine
+from base.extras.state_machine_old import StateMachine
 
 
 clientes = []

@@ -8,7 +8,7 @@ import time
 import threading
 
 # Librrias Propias
-from aruco_detector2 import ArUco_Marker
+from base.extras.aruco_detector2 import ArUco_Marker
 
 ArucoType: dict = {
     'DICT_4X4_50': cv2.aruco.DICT_4X4_50,
@@ -53,7 +53,7 @@ class Robot:
         
         cv2.circle(frame, (int(rob_ball_pose[0]), int(rob_ball_pose[1])), 10, (0, 255, 0), -1)
         
-        if dist(rob_ball_pose, ball.position) < 10.0:   # Si la pelota est a menos de 10 unidades del frente del robot
+        if dist(rob_ball_pose, ball.pos()) < 10.0:   # Si la pelota est a menos de 10 unidades del frente del robot
             return True
         return False
     
